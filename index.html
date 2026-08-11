@@ -32,9 +32,13 @@
 
   /* ── 헤더 ── */
   header { margin-bottom: 18px; display: flex; align-items: baseline; gap: 10px; }
-  h1 { font-size: 21px; letter-spacing: -.02em; }
+  h1 { font-size: 21px; letter-spacing: -.02em; white-space: nowrap; }
   h1 span { color: var(--accent); }
   .tagline { font-size: 12px; color: var(--dim); }
+  @media (max-width: 480px) {
+    h1 { font-size: 17px; }        /* 모바일: 타이틀 한 줄 유지 */
+    .tagline { display: none; }    /* 부제는 좁은 화면에서 숨김 */
+  }
 
   /* ── 공통 ── */
   .card {
@@ -777,7 +781,11 @@ function renderOnboarding(step) {
         <p class="qlabel" style="margin-top:4px">かく에 오신 걸 환영해요</p>
         <p class="qprompt" style="font-size:23px;line-height:1.5">보고 넘기면 잊어버립니다.<br><span style="color:var(--accent)">직접 써야</span> 외워집니다.</p>
         <div class="kana-view" style="font-size:26px;min-height:60px">mizu → みず</div>
-        <p class="extra" style="margin-top:12px">로마자로 치면 히라가나가 됩니다.<br>JLPT 단어 8,110개 · 한자 2,212자 · 가입 없음, 기록은 이 기기에 저장</p>
+        <p class="extra" style="margin-top:12px">
+          로마자로 치면 히라가나가 됩니다.<br>
+          JLPT 단어 8,110개 · 한자 2,212자<br>
+          가입 없음 · 기록은 이 기기에 저장
+        </p>
         <div class="row"><button id="ob1">시작하기</button></div>
       </div>`;
     document.getElementById('ob1').onclick = () => renderOnboarding(2);
