@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>かく(Kaku) 기능 명세서 v0.1</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --accent: #ea580c; --accent-soft: #fff2e8;
+    --ink: #1c1917; --sub: #57534e; --dim: #a8a29e;
+    --line: #e7e5e4; --bg: #faf9f7; --ok: #16a34a;
+  }
+  body {
+    font-family: -apple-system, "Segoe UI", "Malgun Gothic", sans-serif;
+    background: var(--bg); color: var(--ink); line-height: 1.75;
+    display: flex; justify-content: center; padding: 40px 20px 80px;
+  }
+  .doc { max-width: 860px; width: 100%; }
+  header { border-bottom: 3px solid var(--accent); padding-bottom: 20px; margin-bottom: 32px; }
+  .doc-type { font-size: 13px; color: var(--accent); font-weight: 700; letter-spacing: .08em; }
+  h1 { font-size: 28px; letter-spacing: -.02em; margin: 6px 0 8px; }
+  .meta { font-size: 13px; color: var(--dim); }
+  h2 { font-size: 19px; margin: 44px 0 14px; padding-left: 12px; border-left: 4px solid var(--accent); }
+  h3 { font-size: 15px; margin: 24px 0 8px; }
+  h3 .scr { color: var(--accent); font-family: ui-monospace, Consolas, monospace; font-size: 13px; margin-right: 6px; }
+  p, li { font-size: 14.5px; color: var(--sub); }
+  ul, ol { padding-left: 22px; margin: 8px 0; }
+  li { margin: 4px 0; }
+  b { color: var(--ink); }
+  .accent { color: var(--accent); font-weight: 700; }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13.5px; }
+  th { background: #f5f5f4; text-align: left; padding: 8px 12px; border-bottom: 2px solid var(--line); font-size: 12.5px; color: var(--sub); }
+  td { padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; color: var(--sub); }
+  td:first-child { font-weight: 600; color: var(--ink); white-space: nowrap; }
+  .callout { background: var(--accent-soft); border-left: 4px solid var(--accent); border-radius: 0 10px 10px 0; padding: 12px 16px; margin: 12px 0; font-size: 14px; }
+  .mock {
+    background: #fff; border: 1.5px solid var(--line); border-radius: 14px;
+    padding: 18px; margin: 12px 0; max-width: 380px;
+    font-size: 13px; color: var(--sub); line-height: 1.9;
+  }
+  .mock .big { font-size: 15px; font-weight: 700; color: var(--ink); }
+  .mock .btn { background: var(--accent); color: #fff; border-radius: 9px; padding: 8px; text-align: center; font-weight: 700; margin: 6px 0; }
+  .mock .ghost { background: #fff; border: 1.5px solid var(--line); color: var(--sub); border-radius: 9px; padding: 7px; text-align: center; margin: 4px 0; }
+  .mock .chipline { color: var(--dim); font-size: 12px; }
+  code { background: #f5f5f4; border-radius: 4px; padding: 1px 6px; font-size: 12.5px; font-family: ui-monospace, Consolas, monospace; color: var(--ink); }
+  .flow { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 10px 0; font-size: 13px; }
+  .flow span { background: #fff; border: 1.5px solid var(--line); border-radius: 8px; padding: 6px 10px; font-weight: 600; color: var(--ink); }
+  .flow .a { color: var(--accent); font-weight: 700; border: none; background: none; padding: 0; }
+  footer { margin-top: 56px; padding-top: 16px; border-top: 1px solid var(--line); font-size: 12px; color: var(--dim); }
+  @media print { body { background: #fff; padding: 0; } h2 { page-break-after: avoid; } table, .mock, .callout { page-break-inside: avoid; } }
+</style>
+</head>
+<body>
+<div class="doc">
+
+<header>
+  <div class="doc-type">FUNCTIONAL SPEC · v0.1</div>
+  <h1>かく(Kaku) 기능 명세서 — 배포 전 개발 범위</h1>
+  <div class="meta">2026-08-11 · 기획서 v0.1의 Phase 1을 구체화 · 결정사항 4건 반영(대시보드형 홈 / 목표 기반 streak / 레벨+시험일 온보딩 / 타이핑 우선 첫 경험)</div>
+</header>
+
+<h2>0. 확정된 설계 원칙</h2>
+<ul>
+  <li><b>홈은 설정이 아니라 대시보드다.</b> 열자마자 "오늘 할 일"이 보이고 버튼 하나로 시작한다.</li>
+  <li><b>streak은 '출석'이 아니라 '달성'이다.</b> 일일 목표를 채워야 이어진다.</li>
+  <li><b>첫 1분 안에 타이핑을 경험시킨다.</b> 차별점을 첫 세션에서 만나게 한다.</li>
+  <li><b>설정할 게 없는 앱.</b> 온보딩 3스텝 이후에는 아무것도 설정하지 않아도 매일 굴러간다.</li>
+</ul>
+
+<h2>1. 화면 구조 (IA)</h2>
+<div class="flow">
+  <span>첫 방문</span><span class="a">→</span><span>온보딩 S0</span><span class="a">→</span><span>첫 세션(타이핑)</span><span class="a">→</span><span>홈 S1</span>
+</div>
+<div class="flow">
+  <span>재방문</span><span class="a">→</span><span>홈 S1 (대시보드)</span><span class="a">→</span><span>오늘의 학습 S2 / 오답노트 S3 / 자유학습 S4 / 통계 S5 / 설정 S6</span>
+</div>
+<table>
+  <tr><th>ID</th><th>화면</th><th>비고</th></tr>
+  <tr><td>S0</td><td>온보딩</td><td>첫 방문 1회만. 기존 사용자(기록 있음)는 건너뛰고 설정 유도 배너</td></tr>
+  <tr><td>S1</td><td>홈 (대시보드)</td><td>★ 신규 — 매일의 진입점</td></tr>
+  <tr><td>S2</td><td>오늘의 학습 세션</td><td>★ 신규 — 복습+새 단어 자동 구성 (스마트 세션)</td></tr>
+  <tr><td>S3</td><td>오답 노트</td><td>기존 유지</td></tr>
+  <tr><td>S4</td><td>자유 학습</td><td>기존 홈(레벨·덱·모드·문항 수 선택)이 이 화면으로 이동</td></tr>
+  <tr><td>S5</td><td>통계</td><td>★ 신규 — North Star 시각화</td></tr>
+  <tr><td>S6</td><td>설정</td><td>★ 신규 — 목표·시험일·발음·백업·초기화 모음</td></tr>
+</table>
+
+<h2>2. 화면별 스펙</h2>
+
+<h3><span class="scr">S0</span>온보딩 (4스텝 + 첫 세션)</h3>
+<ol>
+  <li><b>컨셉 1장</b> — "보고 넘기면 잊습니다. かく는 직접 써서 외웁니다." + 타이핑 미리보기 애니메이션(mizu → みず). 버튼: [시작하기]</li>
+  <li><b>학습 목적 (세그먼트 질문)</b> — "일본어, 왜 공부하세요?" 5택1: 💼 취업·이직 / 📝 JLPT 점수 필요 / ✈️ 유학·워홀 / 🎮 취미·덕질 / 🧳 여행. 단일 선택, 건너뛰기 가능. <span class="accent">익명 세그먼트 축</span>으로 애널리틱스에 사용 (목적 × 레벨 × 시험일 유무)</li>
+  <li><b>목표 레벨</b> — N5~N1 선택 (기본 N3)</li>
+  <li><b>시험일 (선택)</b> — 날짜 입력 → D-day 계산. [건너뛰기] 가능. 일일 목표는 기본 10문항으로 자동 설정(설정에서 변경 안내 한 줄)</li>
+  <li><b>첫 세션</b> — 선택 레벨의 빈도 상위 쉬운 단어 <b>5문항, 타이핑(단어→읽기) 고정</b>. <span class="accent">순수 맛보기: SRS·일일 집계·오답 노트에 기록하지 않음</span> (홈에 0/10으로 시작, 같은 단어를 오늘의 학습에서 다시 만남). 완료 화면은 점수만 — 틀린 단어 목록·목표 진행·진도 줄 없이 <b>[홈으로] 버튼 하나</b> <span class="accent">(v0.1 사용 피드백 반영, 2026-08-11)</span></li>
+</ol>
+<div class="callout">이탈 방지 원칙: 온보딩에서 텍스트 입력은 시험일 하나뿐, 그마저 건너뛰기 가능. 가입·이름·이메일 없음.</div>
+
+<h3><span class="scr">S1</span>홈 — 대시보드</h3>
+<div class="mock">
+  <div class="big">🔥 12일째 &nbsp;·&nbsp; N3까지 D-87</div>
+  오늘 목표 <b style="color:var(--accent)">7 / 10</b> ▓▓▓▓▓▓▓░░░<br>
+  📥 복습 만기 <b>23</b> · 🆕 새 단어 대기 <b>6</b> · 📕 오답 노트 <b>9</b>
+  <div class="btn">오늘의 학습 시작 →</div>
+  <div class="ghost">📕 오답 노트</div>
+  <div class="ghost">자유 학습</div>
+  <div class="chipline">📊 통계 · ⚙️ 설정</div>
+</div>
+<ul>
+  <li>목표 달성 시: 진행바 초록 + "오늘 목표 달성! 🔥 streak 이어짐" — 추가 학습은 계속 가능</li>
+  <li>시험일 없으면 D-day 숨김. 시험일이 지나면 "시험 끝! 결과가 어땠든 단어는 남았어요 → 새 목표 설정" 배너</li>
+  <li>복습 만기 0 + 새 단어 0이면: "오늘 복습은 없어요. 자유 학습으로 앞서 나가기" 안내</li>
+</ul>
+
+<h3><span class="scr">S2</span>오늘의 학습 — 스마트 세션</h3>
+<ul>
+  <li>구성 로직(우선순위): <b>① SRS 만기 복습 → ② 오답노트(상자 낮은 순) → ③ 새 단어</b> 순으로 목표 문항 수만큼 채움 — 기존 buildSession의 due→new 로직 확장</li>
+  <li>범위: 온보딩에서 정한 <b>목표 레벨</b>. 덱은 대시보드의 <b>단어/한자 토글</b>로 선택 — 마지막 선택을 기억하며 기본은 단어 (매일 묻지 않음 = 마찰 최소화). 다른 레벨은 자유 학습에서</li>
+  <li>출제 방식: 기존 mix 로직 그대로 (상자 0~1 고르기 → 2부터 타이핑)</li>
+  <li>세션 완료 화면에 <b>오늘 진행도(7/10)</b>와 "한 세션 더" 버튼</li>
+</ul>
+
+<h3><span class="scr">S5</span>통계</h3>
+<ul>
+  <li><b>정착 단어 누적</b> (상자4 이상 도달 수) — North Star. 큰 숫자 하나</li>
+  <li><b>최근 7일 학습량</b> — 일별 문항 수 막대 + 목표선</li>
+  <li><b>주간 정착 수</b> — 이번 주 상자4 도달 단어 수</li>
+  <li>레벨별 진도(기존 막대), 오답 노트 현황</li>
+</ul>
+
+<h3><span class="scr">S6</span>설정</h3>
+<ul>
+  <li>목표 레벨 / 시험일 / 일일 목표(10·20·30·50·직접)</li>
+  <li>발음 자동 재생 on/off</li>
+  <li><b>데이터 내보내기</b>(JSON 파일 다운로드) / <b>가져오기</b>(파일 업로드 → 병합 or 교체 선택)</li>
+  <li>기록 초기화(기존 기능 이동)</li>
+</ul>
+
+<h2>3. 규칙 정의 (판정 로직)</h2>
+<table>
+  <tr><th>규칙</th><th>정의</th></tr>
+  <tr><td>일일 목표</td><td>단위 = <b>채점된 문항 수</b>(정답·오답 무관, 덱·모드 무관). 기본 10. 자정(기기 로컬 시간) 기준으로 리셋</td></tr>
+  <tr><td>streak 증가</td><td>오늘 문항 수 ≥ 오늘의 목표값 → 그날 '달성'. 달성한 날이 이어진 일수가 streak</td></tr>
+  <tr><td>streak 끊김</td><td>달성 못 한 날이 하루라도 지나면 0부터. (앱을 열었는지는 무관 — '달성'만 본다)</td></tr>
+  <tr><td>목표 변경 시</td><td>판정은 항상 <b>그날의 목표값</b> 기준. 소급 재계산 없음</td></tr>
+  <tr><td>자정 걸친 세션</td><td>문항이 <b>채점된 시점</b>의 날짜로 집계</td></tr>
+  <tr><td>정착(North Star)</td><td>단어가 상자4에 <b>처음</b> 도달한 날 +1. 이후 떨어졌다 재도달해도 중복 집계 안 함</td></tr>
+  <tr><td>D-day</td><td>시험일 − 오늘 (당일 = D-0). 지난 뒤에는 배너로 재설정 유도</td></tr>
+</table>
+
+<h2>4. 데이터 스키마 변경</h2>
+<p><code>localStorage kaku.v2</code>에 추가 (기존 progress·custom·settings는 그대로 유지 = 기존 사용자 기록 보존):</p>
+<table>
+  <tr><th>필드</th><th>내용</th></tr>
+  <tr><td><code>settings.targetLevel</code></td><td>온보딩에서 정한 목표 레벨 (기존 level과 통합)</td></tr>
+  <tr><td><code>settings.examDate</code></td><td>'2026-12-06' 형식, 없으면 null</td></tr>
+  <tr><td><code>settings.purpose</code></td><td>학습 목적 세그먼트: job / exam / abroad / hobby / travel / null(건너뜀)</td></tr>
+  <tr><td><code>settings.todayDeck</code></td><td>오늘의 학습 덱: word / kanji (대시보드 토글, 마지막 선택 기억)</td></tr>
+  <tr><td><code>settings.dailyGoal</code></td><td>일일 목표 문항 수 (기본 10)</td></tr>
+  <tr><td><code>stats.daily</code></td><td><code>{'2026-08-11': {n: 문항수, c: 정답수, s: 신규정착수}}</code> — 날짜별 집계</td></tr>
+  <tr><td><code>stats.streak / lastMet</code></td><td>현재 streak, 마지막 달성일 (매 채점 시 갱신)</td></tr>
+  <tr><td><code>stats.settledIds</code></td><td>상자4에 도달한 적 있는 id 집합 (정착 중복 집계 방지)</td></tr>
+  <tr><td><code>onboarded</code></td><td>온보딩 완료 여부. <b>기존 사용자(progress 있음)는 true로 마이그레이션</b></td></tr>
+</table>
+
+<h2>5. 예외 상황 (엣지 케이스)</h2>
+<ul>
+  <li>기존 사용자 첫 로드 → 온보딩 건너뜀, stats는 오늘부터 집계 시작, 홈에 "목표·시험일을 설정해 보세요" 배너 1회</li>
+  <li>목표 레벨의 새 단어를 다 소진 → "N3 단어를 전부 만났어요!" + 다음 레벨 제안</li>
+  <li>가져오기 파일이 손상/형식 오류 → 기존 데이터 유지, 오류 안내 (덮어쓰기 전 검증)</li>
+  <li>같은 날 목표를 여러 번 바꿈 → 마지막 값 기준으로 그날 판정</li>
+</ul>
+
+<h2>6. 이번에 안 만드는 것 (스코프 아웃)</h2>
+<ul>
+  <li>푸시 알림 — 서버 필요, Phase 3</li>
+  <li>계정·기기 간 동기화 — 내보내기/가져오기로 대체, Phase 3</li>
+  <li>단어 뜻 신고 버튼 — 테스터에게는 구두/메모로 수집, 반응 보고 결정</li>
+  <li><s>한자 덱의 오늘의 학습 편입</s> — <span class="accent">v0.1 사용 피드백으로 스코프 인:</span> 대시보드 단어/한자 토글로 반영 (2026-08-11)</li>
+</ul>
+
+<h2>7. 구현 순서</h2>
+<ol>
+  <li>stats 스키마 + 채점 시 일일 집계 기록 (모든 기능의 토대)</li>
+  <li>S2 오늘의 학습(스마트 세션) + S1 대시보드 홈</li>
+  <li>streak·D-day 판정 + 표시</li>
+  <li>S0 온보딩 (+기존 사용자 마이그레이션)</li>
+  <li>S5 통계 화면</li>
+  <li>S6 설정 + 내보내기/가져오기</li>
+</ol>
+<p>이후 → Phase 1b 배포 작업(모바일 점검·PWA·GitHub Pages·애널리틱스)으로 진행.</p>
+
+<footer>かく(Kaku) 기능 명세서 v0.1 · 2026-08-11 · 기획서 v0.1과 세트 문서 · PDF 저장: Ctrl+P → "PDF로 저장"</footer>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>かく — 써보는 일본어 단어장</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --accent: #ea580c;
+    --accent-soft: #fff2e8;
+    --ok: #16a34a;
+    --ok-soft: #eefbf1;
+    --no: #dc2626;
+    --no-soft: #fef2f2;
+    --ink: #1c1917;
+    --sub: #78716c;
+    --line: #e7e5e4;
+    --bg: #faf9f7;
+  }
+
+  body {
+    font-family: -apple-system, "Segoe UI", "Malgun Gothic", "Hiragino Sans",
+                 "Yu Gothic", "Meiryo", sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    display: flex;
+    justify-content: center;
+    padding: 32px 16px 64px;
+    min-height: 100vh;
+  }
+
+  .app { width: 100%; max-width: 560px; }
+
+  /* ── 헤더 ── */
+  header { margin-bottom: 20px; }
+  h1 {
+    font-size: 22px;
+    letter-spacing: -0.02em;
+  }
+  h1 .jp { color: var(--accent); }
+  .tagline { font-size: 13px; color: var(--sub); margin-top: 4px; }
+
+  .bar {
+    height: 6px;
+    background: var(--line);
+    border-radius: 99px;
+    margin-top: 16px;
+    overflow: hidden;
+  }
+  .bar-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--accent);
+    border-radius: 99px;
+    transition: width .3s ease;
+  }
+  .counts {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--sub);
+    margin-top: 8px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ── 카드 ── */
+  .card {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 32px 24px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.04);
+  }
+
+  .prompt-label {
+    font-size: 12px;
+    color: var(--sub);
+    text-align: center;
+    letter-spacing: .04em;
+  }
+  .prompt {
+    font-size: 34px;
+    font-weight: 700;
+    text-align: center;
+    margin: 10px 0 6px;
+    letter-spacing: -0.02em;
+  }
+  .hint {
+    text-align: center;
+    font-size: 13px;
+    color: var(--sub);
+    min-height: 20px;
+  }
+  .hint b { color: var(--accent); font-weight: 600; }
+
+  /* ── 입력 영역 ── */
+  .kana-view {
+    margin: 24px 0 14px;
+    min-height: 76px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--accent-soft);
+    border-radius: 12px;
+    font-size: 40px;
+    letter-spacing: .06em;
+    color: var(--accent);
+    font-weight: 600;
+    transition: background .2s, color .2s;
+  }
+  .kana-view.empty { color: #d6d3d1; background: #fafaf9; font-size: 17px; font-weight: 400; letter-spacing: 0; }
+  .kana-view.right { background: var(--ok-soft); color: var(--ok); }
+  .kana-view.wrong { background: var(--no-soft); color: var(--no); }
+
+  input[type=text] {
+    width: 100%;
+    padding: 14px 16px;
+    font-size: 18px;
+    font-family: inherit;
+    border: 1.5px solid var(--line);
+    border-radius: 10px;
+    outline: none;
+    text-align: center;
+    letter-spacing: .05em;
+    background: #fff;
+  }
+  input[type=text]:focus { border-color: var(--accent); }
+  input[type=text]:disabled { background: #fafaf9; color: var(--sub); }
+
+  /* ── 피드백 ── */
+  .feedback {
+    margin-top: 16px;
+    text-align: center;
+    font-size: 15px;
+    line-height: 1.7;
+    min-height: 52px;
+  }
+  .feedback .verdict { font-weight: 700; }
+  .feedback.right .verdict { color: var(--ok); }
+  .feedback.wrong .verdict { color: var(--no); }
+  .answer-kana { font-size: 22px; font-weight: 700; }
+  .answer-extra { color: var(--sub); font-size: 14px; }
+
+  /* ── 버튼 ── */
+  .row { display: flex; gap: 8px; margin-top: 18px; }
+  button {
+    flex: 1;
+    padding: 13px;
+    font-size: 15px;
+    font-family: inherit;
+    font-weight: 600;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    background: var(--accent);
+    color: #fff;
+    transition: filter .15s;
+  }
+  button:hover { filter: brightness(1.08); }
+  button.ghost {
+    background: #fff;
+    color: var(--sub);
+    border: 1.5px solid var(--line);
+    flex: 0 0 auto;
+    padding: 13px 18px;
+  }
+
+  /* ── 결과 화면 ── */
+  .done { text-align: center; padding: 20px 0; }
+  .done h2 { font-size: 24px; margin-bottom: 8px; }
+  .score { font-size: 46px; font-weight: 800; color: var(--accent); margin: 12px 0; }
+  .missed {
+    text-align: left;
+    margin-top: 24px;
+    border-top: 1px solid var(--line);
+    padding-top: 18px;
+  }
+  .missed h3 { font-size: 14px; color: var(--sub); margin-bottom: 10px; }
+  .missed li {
+    list-style: none;
+    padding: 8px 0;
+    border-bottom: 1px dashed var(--line);
+    font-size: 15px;
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .missed li b { color: var(--accent); }
+
+  .foot { text-align: center; font-size: 12px; color: #a8a29e; margin-top: 20px; line-height: 1.6; }
+  kbd {
+    background: #fff; border: 1px solid var(--line); border-bottom-width: 2px;
+    border-radius: 4px; padding: 1px 5px; font-size: 11px; font-family: inherit;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header>
+    <h1>かく <span class="jp">— 써보는 일본어 단어장</span></h1>
+    <p class="tagline">눈으로 넘기지 말고, 직접 쳐서 외웁니다.</p>
+    <div class="bar"><div class="bar-fill" id="barFill"></div></div>
+    <div class="counts">
+      <span id="cLeft">남은 단어 0</span>
+      <span id="cScore">⭕ 0 &nbsp; ❌ 0</span>
+    </div>
+  </header>
+
+  <div class="card" id="card"></div>
+
+  <p class="foot">
+    로마자로 치면 히라가나로 바뀝니다. <kbd>Enter</kbd> 로 정답 확인 / 다음 문제<br>
+    예) mizu → みず &nbsp;·&nbsp; gakkou → がっこう &nbsp;·&nbsp; shashin → しゃしん
+  </p>
+</div>
+
+<script>
+/* ==========================================================
+   1. 로마자 → 히라가나 변환기
+   ========================================================== */
+const KANA = {
+  // 요음 (3글자 먼저 매칭돼야 함)
+  kya:'きゃ', kyu:'きゅ', kyo:'きょ',  gya:'ぎゃ', gyu:'ぎゅ', gyo:'ぎょ',
+  sha:'しゃ', shu:'しゅ', sho:'しょ',  sya:'しゃ', syu:'しゅ', syo:'しょ',
+  cha:'ちゃ', chu:'ちゅ', cho:'ちょ',  tya:'ちゃ', tyu:'ちゅ', tyo:'ちょ',
+  nya:'にゃ', nyu:'にゅ', nyo:'にょ',
+  hya:'ひゃ', hyu:'ひゅ', hyo:'ひょ',  bya:'びゃ', byu:'びゅ', byo:'びょ',
+  pya:'ぴゃ', pyu:'ぴゅ', pyo:'ぴょ',
+  mya:'みゃ', myu:'みゅ', myo:'みょ',
+  rya:'りゃ', ryu:'りゅ', ryo:'りょ',
+  jya:'じゃ', jyu:'じゅ', jyo:'じょ',  zya:'じゃ', zyu:'じゅ', zyo:'じょ',
+  // 특수 2~3글자
+  shi:'し', chi:'ち', tsu:'つ', tu:'つ', si:'し', ti:'ち', hu:'ふ', fu:'ふ',
+  ji:'じ', zi:'じ', ja:'じゃ', ju:'じゅ', jo:'じょ', di:'ぢ', du:'づ',
+  // 청음
+  a:'あ', i:'い', u:'う', e:'え', o:'お',
+  ka:'か', ki:'き', ku:'く', ke:'け', ko:'こ',
+  sa:'さ', su:'す', se:'せ', so:'そ',
+  ta:'た', te:'て', to:'と',
+  na:'な', ni:'に', nu:'ぬ', ne:'ね', no:'の',
+  ha:'は', hi:'ひ', he:'へ', ho:'ほ',
+  ma:'ま', mi:'み', mu:'む', me:'め', mo:'も',
+  ya:'や', yu:'ゆ', yo:'よ',
+  ra:'ら', ri:'り', ru:'る', re:'れ', ro:'ろ',
+  wa:'わ', wo:'を',
+  // 탁음 · 반탁음
+  ga:'が', gi:'ぎ', gu:'ぐ', ge:'げ', go:'ご',
+  za:'ざ', zu:'ず', ze:'ぜ', zo:'ぞ',
+  da:'だ', de:'で', do:'ど',
+  ba:'ば', bi:'び', bu:'ぶ', be:'べ', bo:'ぼ',
+  pa:'ぱ', pi:'ぴ', pu:'ぷ', pe:'ぺ', po:'ぽ',
+  // 작은 글자 직접 입력
+  xa:'ぁ', xi:'ぃ', xu:'ぅ', xe:'ぇ', xo:'ぉ', xtsu:'っ', xtu:'っ',
+  '-':'ー'
+};
+
+const isHiragana = ch => ch >= '぀' && ch <= 'ゟ';
+
+/**
+ * 로마자를 히라가나로 바꿉니다.
+ * @param {string} raw   사용자가 친 글자
+ * @param {boolean} final  true면 끝에 남은 n을 ん으로 확정 (채점할 때만)
+ */
+function toKana(raw, final = false) {
+  const s = raw.toLowerCase().replace(/[^a-z぀-ゟ゠-ヿ\-]/g, '');
+  let out = '', i = 0;
+
+  while (i < s.length) {
+    const c = s[i];
+
+    // 이미 히라가나/가타카나면 그대로 통과 (일본어 키보드 쓰는 경우)
+    if (c > '぀') { out += c; i++; continue; }
+
+    // 촉음: 같은 자음이 두 번 (kk, tt, pp ...) → っ
+    if (s[i + 1] === c && !'aeioun'.includes(c)) { out += 'っ'; i++; continue; }
+
+    // ん 처리
+    if (c === 'n') {
+      if (s[i + 1] === 'n') { out += 'ん'; i += 2; continue; }
+      if (i + 1 >= s.length) {
+        // 아직 타이핑 중일 수 있으니 미리보기에선 n을 남겨둠
+        if (final) { out += 'ん'; i++; continue; }
+      } else if (!'aeiouy'.includes(s[i + 1])) {
+        out += 'ん'; i++; continue;
+      }
+    }
+
+    // 긴 것부터 사전 매칭 (kyo → きょ 가 ky+o 로 쪼개지지 않게)
+    let hit = false;
+    for (let len = 4; len >= 1; len--) {
+      const chunk = s.substr(i, len);
+      if (KANA[chunk]) { out += KANA[chunk]; i += len; hit = true; break; }
+    }
+    if (!hit) { out += c; i++; }
+  }
+  return out;
+}
+
+/* ==========================================================
+   2. 단어 데이터
+   ========================================================== */
+const WORDS = [
+  { kana:'みず',     kanji:'水',    ko:'물' },
+  { kana:'ひと',     kanji:'人',    ko:'사람' },
+  { kana:'やま',     kanji:'山',    ko:'산' },
+  { kana:'かわ',     kanji:'川',    ko:'강' },
+  { kana:'そら',     kanji:'空',    ko:'하늘' },
+  { kana:'うみ',     kanji:'海',    ko:'바다' },
+  { kana:'はな',     kanji:'花',    ko:'꽃' },
+  { kana:'いぬ',     kanji:'犬',    ko:'개' },
+  { kana:'ねこ',     kanji:'猫',    ko:'고양이' },
+  { kana:'とり',     kanji:'鳥',    ko:'새' },
+  { kana:'さかな',   kanji:'魚',    ko:'물고기' },
+  { kana:'たまご',   kanji:'卵',    ko:'계란' },
+  { kana:'ごはん',   kanji:'ご飯',  ko:'밥' },
+  { kana:'みせ',     kanji:'店',    ko:'가게' },
+  { kana:'くるま',   kanji:'車',    ko:'자동차' },
+  { kana:'でんしゃ', kanji:'電車',  ko:'전철' },
+  { kana:'がっこう', kanji:'学校',  ko:'학교' },
+  { kana:'せんせい', kanji:'先生',  ko:'선생님' },
+  { kana:'がくせい', kanji:'学生',  ko:'학생' },
+  { kana:'ともだち', kanji:'友達',  ko:'친구' },
+  { kana:'かぞく',   kanji:'家族',  ko:'가족' },
+  { kana:'なまえ',   kanji:'名前',  ko:'이름' },
+  { kana:'じかん',   kanji:'時間',  ko:'시간' },
+  { kana:'あさ',     kanji:'朝',    ko:'아침' },
+  { kana:'よる',     kanji:'夜',    ko:'밤' },
+  { kana:'きょう',   kanji:'今日',  ko:'오늘' },
+  { kana:'あした',   kanji:'明日',  ko:'내일' },
+  { kana:'しゃしん', kanji:'写真',  ko:'사진' },
+  { kana:'きっぷ',   kanji:'切符',  ko:'표, 티켓' },
+  { kana:'でんわ',   kanji:'電話',  ko:'전화' }
+];
+
+/* ==========================================================
+   3. 학습 상태
+   ========================================================== */
+let queue, right, wrong, missed, cur, checked;
+
+function start() {
+  queue   = shuffle([...WORDS]);
+  right   = 0;
+  wrong   = 0;
+  missed  = [];   // 틀린 단어 기록
+  next();
+}
+
+function shuffle(a) {
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function next() {
+  checked = false;
+  cur = queue.shift();
+  cur ? renderQuiz() : renderDone();
+  paintProgress();
+}
+
+/* ==========================================================
+   4. 화면 그리기
+   ========================================================== */
+const card = document.getElementById('card');
+
+function renderQuiz() {
+  card.innerHTML = `
+    <p class="prompt-label">이 뜻의 일본어를 히라가나로 써보세요</p>
+    <p class="prompt">${cur.ko}</p>
+    <p class="hint" id="hint"><b>${cur.kana.length}</b>글자</p>
+
+    <div class="kana-view empty" id="kanaView">여기에 히라가나가 나타납니다</div>
+    <input type="text" id="answer" autocomplete="off" autocapitalize="off"
+           spellcheck="false" placeholder="로마자로 입력 (예: mizu)">
+
+    <div class="feedback" id="feedback"></div>
+
+    <div class="row">
+      <button id="mainBtn">확인</button>
+      <button class="ghost" id="skipBtn">모르겠어요</button>
+    </div>
+  `;
+
+  const input    = document.getElementById('answer');
+  const kanaView = document.getElementById('kanaView');
+
+  input.addEventListener('input', () => {
+    const kana = toKana(input.value);
+    kanaView.textContent = kana || '여기에 히라가나가 나타납니다';
+    kanaView.className = 'kana-view' + (kana ? '' : ' empty');
+  });
+
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); onMain(); }
+  });
+
+  document.getElementById('mainBtn').onclick = onMain;
+  document.getElementById('skipBtn').onclick = () => { if (!checked) grade(true); };
+  input.focus();
+}
+
+function onMain() {
+  checked ? next() : grade(false);
+}
+
+function grade(gaveUp) {
+  const input    = document.getElementById('answer');
+  const kanaView = document.getElementById('kanaView');
+  const fb       = document.getElementById('feedback');
+  const typed    = toKana(input.value, true);   // 끝의 n을 ん으로 확정
+  const correct  = !gaveUp && typed === cur.kana;
+
+  checked = true;
+  input.disabled = true;
+
+  if (correct) {
+    right++;
+    kanaView.textContent = cur.kana;
+    kanaView.className = 'kana-view right';
+    fb.className = 'feedback right';
+    fb.innerHTML = `
+      <span class="verdict">⭕ 정답!</span><br>
+      <span class="answer-extra">${cur.kanji} · ${cur.ko}</span>`;
+  } else {
+    wrong++;
+    missed.push(cur);
+    queue.splice(Math.min(3, queue.length), 0, cur);  // 3문제 뒤에 다시 출제
+    kanaView.className = 'kana-view wrong';
+    kanaView.textContent = typed || '(빈칸)';
+    fb.className = 'feedback wrong';
+    fb.innerHTML = `
+      <span class="verdict">❌ ${gaveUp ? '정답은' : '아쉬워요'}</span>
+      <span class="answer-kana">${cur.kana}</span><br>
+      <span class="answer-extra">${cur.kanji} · ${cur.ko} — 조금 뒤에 다시 나옵니다</span>`;
+  }
+
+  document.getElementById('mainBtn').textContent = '다음 →';
+  document.getElementById('skipBtn').style.display = 'none';
+  document.getElementById('mainBtn').focus();
+  paintProgress();
+}
+
+function renderDone() {
+  const total = right + wrong;
+  const pct = total ? Math.round(right / total * 100) : 0;
+  const uniqueMissed = [...new Map(missed.map(w => [w.kana, w])).values()];
+
+  card.innerHTML = `
+    <div class="done">
+      <h2>おつかれさま！ 🎉</h2>
+      <p class="answer-extra">오늘 ${WORDS.length}개 단어를 모두 돌았어요</p>
+      <p class="score">${pct}%</p>
+      <p class="answer-extra">한 번에 맞힌 비율 · 총 ${total}번 시도</p>
+      ${uniqueMissed.length ? `
+        <div class="missed">
+          <h3>한 번이라도 틀린 단어 ${uniqueMissed.length}개 — 여기가 진짜 공부할 곳이에요</h3>
+          <ul>${uniqueMissed.map(w =>
+            `<li><span><b>${w.kana}</b> ${w.kanji}</span><span class="answer-extra">${w.ko}</span></li>`
+          ).join('')}</ul>
+        </div>` : ''}
+      <div class="row"><button id="againBtn">다시 한 바퀴</button></div>
+    </div>
+  `;
+  document.getElementById('againBtn').onclick = start;
+}
+
+function paintProgress() {
+  const total = WORDS.length;
+  document.getElementById('barFill').style.width =
+    Math.round((right / total) * 100) + '%';
+  document.getElementById('cLeft').textContent = `남은 단어 ${queue.length}`;
+  document.getElementById('cScore').textContent = `⭕ ${right}  ❌ ${wrong}`;
+}
+
+start();
+</script>
+</body>
+</html>
