@@ -360,7 +360,7 @@ function streakNow() {
    비어 있으면 아무것도 전송하지 않습니다(no-op).
    이벤트는 경로로 기록: /이벤트명/세그먼트(목적-레벨-시험일유무)
    → GoatCounter 대시보드에서 경로별로 "취업×N2×시험일있음" 같은 분석 가능 */
-const ANALYTICS = '';
+const ANALYTICS = 'https://kaku.goatcounter.com/count';
 function track(event) {
   try {
     if (!ANALYTICS) return;

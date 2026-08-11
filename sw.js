@@ -1,5 +1,5 @@
 /* かく 서비스워커 — 앱 셸 캐시 (오프라인 학습 + iOS 저장소 보존에 도움) */
-const CACHE = 'kaku-v1';
+const CACHE = 'kaku-v2';   // 배포 업데이트 시마다 버전을 올려 사용자에게 새 버전이 가게 함
 const ASSETS = [
   './',
   './index.html',
