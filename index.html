@@ -785,8 +785,16 @@ function renderSettings() {
 }
 
 /* ---------- 온보딩 (S0) — 첫 방문 4스텝 ---------- */
+/* 퍼널 측정: 각 스텝 도달을 1회씩만 기록 (재렌더 중복 방지)
+   → GoatCounter에서 onboard_step1~4 → onboard_session → onboard_done 이탈률 확인 */
+const obTracked = {};
+function obTrack(step) {
+  if (!obTracked[step]) { obTracked[step] = 1; track('onboard_step' + step); }
+}
+
 function renderOnboarding(step) {
   step = step || 1;
+  obTrack(step);
   // 레벨 화면(3단계)까지 왔으면 온보딩 완료로 확정 —
   // 시험일을 입력하지 않거나 어느 단계에서 앱을 닫아도 온보딩이 반복되지 않음
   if (step >= 3 && !S.onboarded) { S.onboarded = true; save(); }
@@ -909,6 +917,7 @@ function startOnboardSession() {
   // 온보딩 완료 도장은 여기서 — 첫 세션을 중간에 그만두거나 앱을 닫아도
   // 다음에 온보딩이 다시 나오지 않게 (레벨·시험일 입력이 끝났으면 온보딩은 끝)
   S.onboarded = true; save();
+  track('onboard_session');   // 퍼널: 첫 세션 진입
   sessionMode = 'onboard'; sessionDeck = 'word'; sessionLevel = lvl;
   queue = basePoolOf(lvl, 'word').slice(0, 5).map(it =>
     ({ it, id: idOf(lvl, 'word', it), lv: lvl, box: 0, due: null, isNew: true }));
