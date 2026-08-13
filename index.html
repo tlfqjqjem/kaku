@@ -481,17 +481,6 @@ function shuffle(a) {
   return a;
 }
 
-/* 박(拍·모라) 수 세기 — 요음(ゃゅょ 등 작은 글자)은 앞 글자에 붙어 0박, 촉음 っ·ん·ー는 각 1박
-   예) こんきょ=3박, がっこう=4박, しゃしん=3박 (커뮤니티 피드백 반영: 글자 수 힌트가 박자를 오해시킴) */
-function moraCount(kana) {
-  let n = 0;
-  for (const ch of kana) {
-    if ('ゃゅょぁぃぅぇぉゎ'.includes(ch)) continue;
-    n++;
-  }
-  return n;
-}
-
 /* ── 한자 상세: 단어 속 한자를 분해해 훈음·음독·훈독·예시를 보여줌 (전 레벨 한자 데이터 재활용) ── */
 let KANJI_INDEX = null;
 function kanjiInfo(ch) {
@@ -1043,8 +1032,8 @@ function nextQ() {
 function qSpec() {
   const it = cur.it;
   switch (curKind) {
-    case 'ko2kana':    return { label:'이 뜻의 단어를 히라가나로 써보세요', prompt: it.ko,    big:false, type:'write',  answer: it.kana, hintLen: moraCount(it.kana), audio: it.kana };
-    case 'kanji2kana': return { label:'이 단어의 읽는 법을 로마자로 써보세요', prompt: it.kanji, big:false, type:'write', answer: it.kana, hintLen: moraCount(it.kana), audio: it.kana };
+    case 'ko2kana':    return { label:'이 뜻의 단어를 히라가나로 써보세요', prompt: it.ko,    big:false, type:'write',  answer: it.kana, audio: it.kana };
+    case 'kanji2kana': return { label:'이 단어의 읽는 법을 로마자로 써보세요', prompt: it.kanji, big:false, type:'write', answer: it.kana, audio: it.kana };
     case 'kana2ko':    return { label:'이 단어의 뜻은?',                     prompt: it.kanji, big:false, type:'choose', answer: it.ko,   field:'ko',  audio: it.kana,
                                 hintKana: it.kanji !== it.kana ? it.kana : '' };   // 한자를 크게, 읽기는 아래 작게
     case 'kanji2ko':   return { label:'이 한자의 뜻은?',                     prompt: it.ch,    big:true,  type:'choose', answer: it.ko,   field:'ko',  audio: it.exKana };
@@ -1075,7 +1064,7 @@ function renderQuiz() {
       <p class="qlabel">${q.label}</p>
       <p class="qprompt ${q.big ? 'big' : ''}">${esc(q.prompt)}</p>
       <p class="qmeaning" id="qMeaning"></p>
-      <p class="qhint">${q.type === 'write' ? `<b>${q.hintLen}</b>박` : (q.hintKana ? esc(q.hintKana) : '')}</p>
+      <p class="qhint">${q.type !== 'write' && q.hintKana ? esc(q.hintKana) : ''}</p>
 
       ${q.type === 'write' ? `
         <div class="kana-view empty" id="kanaView">여기에 히라가나가 나타납니다</div>
@@ -1196,7 +1185,7 @@ function grade(raw, gaveUp, btn) {
     const chars = [...new Set([...it.kanji].filter(c => c >= '一' && c <= '鿿'))];
     const infos = chars.map(kanjiInfo).filter(Boolean);
     if (infos.length) {
-      const label = open => `🈁 이 단어의 한자 ${infos.length}자 ${open ? '▴' : '▾'}`;
+      const label = open => `⭐ 이 단어의 한자 상세 뜻 ${open ? '▴' : '▾'}`;
       kd.innerHTML = `
         <button class="kd-btn" id="kdBtn">${label(false)}</button>
         <div class="kd-panel" id="kdPanel" style="display:none">
