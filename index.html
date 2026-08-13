@@ -38,6 +38,15 @@
   @media (max-width: 480px) {
     h1 { font-size: 17px; }        /* 모바일: 타이틀 한 줄 유지 */
     .tagline { display: none; }    /* 부제는 좁은 화면에서 숨김 */
+    /* 문제 화면 압축 — 키보드가 올라와도 입력칸까지 다 보이게 */
+    body { padding: 12px 12px 40px; }
+    header { margin-bottom: 10px; }
+    .card { padding: 16px 14px; }
+    .qprompt { font-size: 28px; margin: 8px 0 4px; }
+    .qprompt.big { font-size: 50px; }
+    .qmeaning { font-size: 16px; }
+    .kana-view { min-height: 54px; font-size: 28px; margin: 12px 0 10px; }
+    .feedback { min-height: 40px; margin-top: 10px; }
   }
 
   /* ── 공통 ── */
@@ -948,7 +957,8 @@ function renderQuiz() {
       <div class="qbar"><i style="width:${done / sessionLen * 100}%"></i></div>
       <div class="qmeta">
         <span>${({ mistake: '📕 오답 · ' + cur.lv, today: '오늘의 학습', onboard: '첫 학습' })[sessionMode] || sessionLevel} · ${sessionDeck === 'word' ? '단어' : '한자'} · ${done + 1}/${sessionLen}</span>
-        <span>⭕ ${right} &nbsp; ❌ ${wrong} &nbsp;<span class="box-tag">상자 ${cur.box}/${MAXBOX}</span></span>
+        <span>⭕ ${right} &nbsp; ❌ ${wrong} &nbsp;<span class="box-tag">상자 ${cur.box}/${MAXBOX}</span>
+          <button class="speak" id="speakToggle" title="발음 자동 재생 켜기/끄기">${S.settings.speak ? '🔊' : '🔇'}</button></span>
       </div>
 
       <p class="qlabel">${q.label}</p>
@@ -977,6 +987,16 @@ function renderQuiz() {
     </div>
   `;
 
+  window.scrollTo(0, 0);   // 새 문제마다 화면 맨 위로 (모바일에서 스크롤 잔상 방지)
+
+  // 발음 자동 재생 토글 (온보딩 포함 어느 세션에서든 바로 끄고 켜기)
+  const spkToggle = document.getElementById('speakToggle');
+  spkToggle.onclick = () => {
+    S.settings.speak = !S.settings.speak; save();
+    spkToggle.textContent = S.settings.speak ? '🔊' : '🔇';
+    if (!S.settings.speak && 'speechSynthesis' in window) speechSynthesis.cancel();
+  };
+
   if (q.type === 'write') {
     const input = document.getElementById('answer');
     const view  = document.getElementById('kanaView');
@@ -987,6 +1007,8 @@ function renderQuiz() {
     };
     input.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); checked ? nextQ() : grade(input.value, false); } };
     input.focus();
+    // 모바일: 키보드가 올라온 뒤 입력칸이 가려지지 않게 가운데로 스크롤
+    setTimeout(() => { try { input.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e) {} }, 250);
     document.getElementById('mainBtn').onclick = () => checked ? nextQ() : grade(input.value, false);
   } else {
     screen.querySelectorAll('.opt').forEach(b => b.onclick = () => { if (!checked) grade(b.dataset.v, false, b); });
@@ -1105,6 +1127,7 @@ function renderDone() {
       </div>
     </div>
   `;
+  window.scrollTo(0, 0);
   screen.querySelectorAll('[data-say]').forEach(b => b.onclick = () => speak(b.dataset.say));
   const againBtn = document.getElementById('againBtn');
   if (againBtn) againBtn.onclick = () =>
