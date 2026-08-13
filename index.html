@@ -356,6 +356,8 @@ function recordAnswer(correct, settled) {
   const k = dstr();   // 자정 걸친 세션: 채점 시점 날짜로 집계
   const d = S.stats.daily[k] || (S.stats.daily[k] = { n: 0, c: 0, s: 0 });
   d.n++; if (correct) d.c++; if (settled) d.s++;
+  track(correct ? 'answer_o' : 'answer_x');   // 일일 학습량·정답률 (날짜별 총합으로 집계)
+  if (settled) track('word_settled');          // ⭐ North Star: 단어가 상자4(정착)에 첫 도달
   // 오늘 목표를 채우는 순간 streak 판정 (그날의 목표값 기준, 소급 없음)
   if (d.n >= S.settings.dailyGoal && S.stats.lastMet !== k) {
     S.stats.streak = (S.stats.lastMet === yesterdayStr()) ? S.stats.streak + 1 : 1;
