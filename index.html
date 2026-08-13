@@ -1180,7 +1180,8 @@ function grade(raw, gaveUp, btn) {
         const opening = p.style.display === 'none';
         p.style.display = opening ? 'block' : 'none';
         document.getElementById('kdBtn').textContent = label(opening);
-        if (opening) track('kanji_detail_open');
+        // 단어별로 기록 → "사용자들이 가장 많이 들춰보는(=헷갈려하는) 단어" 랭킹이 됨
+        if (opening) track('kanji_detail_open/' + it.kanji);
       };
     }
   }
