@@ -8,6 +8,15 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
+<!-- 공유 미리보기 카드 (카톡·SNS) -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="かく — 써보는 JLPT 단어장">
+<meta property="og:description" content="보고 넘기면 잊어버립니다. 직접 타이핑해서 외우는 JLPT 단어·한자 학습 앱 — 가입 없이 바로 시작.">
+<meta property="og:url" content="https://kaku-jlpt.netlify.app/">
+<meta property="og:image" content="https://kaku-jlpt.netlify.app/icons/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
 <title>かく — 써보는 JLPT 단어·한자</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -380,6 +389,8 @@ function streakNow() {
    이벤트는 경로로 기록: /이벤트명/세그먼트(목적-레벨-시험일유무)
    → GoatCounter 대시보드에서 경로별로 "취업×N2×시험일있음" 같은 분석 가능 */
 const ANALYTICS = 'https://kaku.goatcounter.com/count';
+/* 피드백 폼(구글폼 등) 주소 — 비어 있으면 설정 화면에 버튼이 표시되지 않음 */
+const FEEDBACK_URL = '';
 function track(event) {
   try {
     if (!ANALYTICS) return;
@@ -720,6 +731,12 @@ function renderSettings() {
         ${canSpeak() ? '' : '<span class="tagline warn" style="align-self:center">⚠ 이 브라우저에 일본어 음성이 없어요</span>'}
       </div>
 
+      ${FEEDBACK_URL ? `
+      <h2 style="margin-top:20px">의견 보내기</h2>
+      <div class="row">
+        <button class="ghost" id="feedbackBtn">💬 의견·오류 제보하기</button>
+      </div>` : ''}
+
       <h2 style="margin-top:20px">데이터</h2>
       <div class="row">
         <button class="ghost" id="exportBtn">📤 기록 내보내기</button>
@@ -760,6 +777,9 @@ function renderSettings() {
     if (nv !== S.settings.dailyGoal) track(nv > S.settings.dailyGoal ? 'goal_changed_up' : 'goal_changed_down');
     S.settings.dailyGoal = nv; save(); renderSettings();
   };
+
+  const fbBtn = document.getElementById('feedbackBtn');
+  if (fbBtn) fbBtn.onclick = () => { track('feedback_open'); window.open(FEEDBACK_URL, '_blank'); };
 
   document.getElementById('exportBtn').onclick = () => {
     const blob = new Blob([JSON.stringify(S)], { type: 'application/json' });
