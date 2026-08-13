@@ -903,6 +903,9 @@ function startTodaySession() {
 /* 온보딩 첫 세션(S0): 목표 레벨의 쉬운 단어 5개, 타이핑 고정 */
 function startOnboardSession() {
   const lvl = S.settings.targetLevel;
+  // 온보딩 완료 도장은 여기서 — 첫 세션을 중간에 그만두거나 앱을 닫아도
+  // 다음에 온보딩이 다시 나오지 않게 (레벨·시험일 입력이 끝났으면 온보딩은 끝)
+  S.onboarded = true; save();
   sessionMode = 'onboard'; sessionDeck = 'word'; sessionLevel = lvl;
   queue = basePoolOf(lvl, 'word').slice(0, 5).map(it =>
     ({ it, id: idOf(lvl, 'word', it), lv: lvl, box: 0, due: null, isNew: true }));
