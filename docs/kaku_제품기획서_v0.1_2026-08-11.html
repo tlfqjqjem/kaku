@@ -178,14 +178,21 @@
 <h3>수집 이벤트 설계 <span class="accent">(v0.1 구현·가동 중)</span></h3>
 <table>
   <tr><th>이벤트</th><th>발생 시점</th><th>답하는 질문</th></tr>
-  <tr><td>visit</td><td>앱 실행</td><td>사용량, 리텐션(근사), 시간대 패턴</td></tr>
+  <tr><td>visit_pwa / visit_browser</td><td>앱 실행 (실행 환경 구분)</td><td>사용량, 리텐션(근사), <b>PWA 설치율</b></td></tr>
   <tr><td>onboard_step1~4</td><td>온보딩 각 화면 도달</td><td>온보딩 퍼널 — 어느 단계에서 이탈하는가</td></tr>
   <tr><td>onboard_session / done</td><td>첫 세션 진입 / 5문항 완료</td><td>aha moment 도달률</td></tr>
-  <tr><td>session_today / free / mistake</td><td>세션 시작 (유형별)</td><td>기능별 사용 분포 — 오답 노트가 실제로 쓰이는가</td></tr>
+  <tr><td>session_today_word/kanji · free · mistake</td><td>세션 시작 (유형·덱별)</td><td>기능별 사용 분포, 한자 덱 사용률</td></tr>
+  <tr><td>session_quit</td><td>세션 중도 이탈 (그만)</td><td>세션 길이·난이도 부담 신호</td></tr>
   <tr><td>session_complete</td><td>세션 완료</td><td>세션 완료율 (길이·난이도 검증)</td></tr>
   <tr><td>answer_o / answer_x</td><td>채점마다 (정답/오답)</td><td>일일 총 학습량, 1인당 평균 문항, 정답률</td></tr>
   <tr><td>word_settled</td><td>단어가 상자4(정착) 첫 도달</td><td><b>⭐ North Star — 일일·주간 정착 단어 수</b></td></tr>
   <tr><td>goal_met</td><td>일일 목표 달성 순간</td><td>목표 달성률, 습관 형성 정도</td></tr>
+  <tr><td>streak_3 / 7 / 30</td><td>연속 학습 마일스톤 도달</td><td>습관 형성 단계 — 리텐션의 선행 지표</td></tr>
+  <tr><td>goal_changed_up / down</td><td>일일 목표 변경</td><td>기본 목표(10문항)의 적정성</td></tr>
+  <tr><td>mistake_open · stats_open · speak_play · import_words</td><td>기능 사용 시</td><td>기능 발견율·사용률 (UI 배치 근거)</td></tr>
+  <tr><td>exam_date_set</td><td>시험일 등록</td><td>D-day 기능 수요 → 시험일 기반 기능 투자 여부</td></tr>
+  <tr><td>export_data / import_data</td><td>백업 내보내기/가져오기</td><td><b>Phase 3 계정·동기화 수요의 직접 근거</b></td></tr>
+  <tr><td>error_js</td><td>JS 오류 발생 (로드당 1회)</td><td>실사용 품질 모니터링</td></tr>
 </table>
 <p>모든 이벤트에 <span class="accent">학습 목적 × 목표 레벨 × 시험일 유무</span> 세그먼트가 경로로 붙는다
 (예: <code style="background:#f5f5f4;padding:1px 5px;border-radius:4px">/word_settled/job-N2-exam</code>) —
