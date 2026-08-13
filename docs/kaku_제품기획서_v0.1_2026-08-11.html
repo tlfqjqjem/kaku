@@ -171,9 +171,25 @@
 </div>
 <h3>수집 방법</h3>
 <ul>
-  <li>학습 기록(상자·정오답): 이미 앱 내 localStorage에 쌓임 → 앱 내 통계 화면으로 시각화</li>
-  <li>행동 지표(방문·세션 시작/완료): 경량 무료 애널리틱스(GoatCounter 등) 이벤트 삽입</li>
+  <li>학습 기록(상자·정오답): 앱 내 localStorage에 저장 → 앱 내 통계 화면으로 시각화 (기기 밖으로 나가지 않음)</li>
+  <li>행동 지표: GoatCounter(무료·익명) 이벤트 수집 — <b>가입·개인정보 없이</b> 아래 이벤트만 전송</li>
 </ul>
+
+<h3>수집 이벤트 설계 <span class="accent">(v0.1 구현·가동 중)</span></h3>
+<table>
+  <tr><th>이벤트</th><th>발생 시점</th><th>답하는 질문</th></tr>
+  <tr><td>visit</td><td>앱 실행</td><td>사용량, 리텐션(근사), 시간대 패턴</td></tr>
+  <tr><td>onboard_step1~4</td><td>온보딩 각 화면 도달</td><td>온보딩 퍼널 — 어느 단계에서 이탈하는가</td></tr>
+  <tr><td>onboard_session / done</td><td>첫 세션 진입 / 5문항 완료</td><td>aha moment 도달률</td></tr>
+  <tr><td>session_today / free / mistake</td><td>세션 시작 (유형별)</td><td>기능별 사용 분포 — 오답 노트가 실제로 쓰이는가</td></tr>
+  <tr><td>session_complete</td><td>세션 완료</td><td>세션 완료율 (길이·난이도 검증)</td></tr>
+  <tr><td>answer_o / answer_x</td><td>채점마다 (정답/오답)</td><td>일일 총 학습량, 1인당 평균 문항, 정답률</td></tr>
+  <tr><td>word_settled</td><td>단어가 상자4(정착) 첫 도달</td><td><b>⭐ North Star — 일일·주간 정착 단어 수</b></td></tr>
+  <tr><td>goal_met</td><td>일일 목표 달성 순간</td><td>목표 달성률, 습관 형성 정도</td></tr>
+</table>
+<p>모든 이벤트에 <span class="accent">학습 목적 × 목표 레벨 × 시험일 유무</span> 세그먼트가 경로로 붙는다
+(예: <code style="background:#f5f5f4;padding:1px 5px;border-radius:4px">/word_settled/job-N2-exam</code>) —
+"취업 준비 N2 수험생"의 정착률을 따로 볼 수 있다. 온보딩 맛보기 세션은 학습 이벤트를 기록하지 않는다.</p>
 
 <h2>8. 검증 계획 — 가설과 실험</h2>
 <table>
@@ -186,8 +202,9 @@
 
 <h2>9. 로드맵</h2>
 <div class="phase"><span class="tag">Phase 1 · 배포</span>
-  <div><b>세상에 내놓기</b> — 모바일 UX 점검(폰 화면·키보드), 첫 방문 온보딩 1장,
-  PWA(홈 화면 설치), GitHub Pages 배포, 애널리틱스 이벤트 삽입</div></div>
+  <div><b>세상에 내놓기</b> — 모바일 UX 점검(폰 화면·키보드), 온보딩(목적 세그먼트 포함),
+  PWA(홈 화면 설치), 배포, 애널리틱스 이벤트 삽입<br>
+  <span class="accent">✅ 2026-08-11 완료</span> — 라이브: kaku-jlpt.netlify.app · 지표: GoatCounter 가동 중</div></div>
 <div class="phase"><span class="tag">Phase 2 · 습관</span>
   <div><b>매일 열게 만들기</b> — 오늘의 복습 대시보드(만기 단어 수), streak(연속 학습일),
   일일 목표 설정, 앱 내 학습 통계 화면</div></div>
