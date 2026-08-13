@@ -203,6 +203,20 @@
         padding:1px 5px; font-size:11px; font-family:inherit; }
   .warn { color: var(--no); }
 
+  /* ── 한자 상세 (채점 후 단어 속 한자 분해) ── */
+  .kd-btn {
+    width: 100%; margin-top: 10px; padding: 10px;
+    font-size: 13.5px; font-weight: 600;
+    background: #fff; border: 1.5px dashed var(--line); color: var(--sub);
+    border-radius: 10px; cursor: pointer;
+  }
+  .kd-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .kd-panel { margin-top: 8px; border: 1px solid var(--line); border-radius: 12px; background: #fff; text-align: left; }
+  .kd-row { display: flex; gap: 14px; padding: 12px 14px; border-bottom: 1px dashed var(--line); align-items: center; }
+  .kd-row:last-child { border-bottom: none; }
+  .kd-ch { font-size: 42px; font-weight: 700; line-height: 1; flex: 0 0 auto; }
+  .kd-info { font-size: 13.5px; line-height: 1.65; }
+
   /* ── 모바일 (맨 끝에 둬야 기본 규칙을 이김) ── */
   @media (max-width: 480px) {
     h1 { font-size: 17px; white-space: nowrap; }   /* 타이틀 한 줄 유지 */
@@ -464,6 +478,18 @@ function shuffle(a) {
     [a[i], a[j]] = [a[j], a[i]];
   }
   return a;
+}
+
+/* ── 한자 상세: 단어 속 한자를 분해해 훈음·음독·훈독·예시를 보여줌 (전 레벨 한자 데이터 재활용) ── */
+let KANJI_INDEX = null;
+function kanjiInfo(ch) {
+  if (!KANJI_INDEX) {
+    KANJI_INDEX = {};
+    for (const lv of LEVELS)
+      for (const k of poolOf(lv, 'kanji'))
+        if (!KANJI_INDEX[k.ch]) KANJI_INDEX[k.ch] = { ...k, lv };
+  }
+  return KANJI_INDEX[ch];
 }
 
 /* ── 오답 노트: 틀린 적 있고(w>0) 아직 못 익힌(box<4) 항목.
@@ -1028,6 +1054,7 @@ function renderQuiz() {
       `}
 
       <div class="feedback" id="feedback"></div>
+      <div id="kanjiDetail"></div>
 
       <div class="row">
         <button id="mainBtn" ${q.type === 'choose' ? 'style="display:none"' : ''}>확인</button>
@@ -1127,6 +1154,36 @@ function grade(raw, gaveUp, btn) {
   const sb = document.getElementById('speakBtn');
   if (sb) sb.onclick = () => { track('speak_play'); speak(q.audio); };
   if (correct && S.settings.speak) speak(q.audio);
+
+  // 한자 상세 — 단어 덱에서 채점 후에만 (채점 전엔 음독이 답을 누설하므로)
+  const kd = document.getElementById('kanjiDetail');
+  if (kd && sessionDeck === 'word') {
+    const chars = [...new Set([...it.kanji].filter(c => c >= '一' && c <= '鿿'))];
+    const infos = chars.map(kanjiInfo).filter(Boolean);
+    if (infos.length) {
+      const label = open => `🈁 이 단어의 한자 ${infos.length}자 ${open ? '▴' : '▾'}`;
+      kd.innerHTML = `
+        <button class="kd-btn" id="kdBtn">${label(false)}</button>
+        <div class="kd-panel" id="kdPanel" style="display:none">
+          ${infos.map(k => `
+          <div class="kd-row">
+            <div class="kd-ch">${esc(k.ch)}</div>
+            <div class="kd-info">
+              <div><span class="box-tag">${k.lv}</span> <b>${esc(k.ko)}</b></div>
+              <div class="extra">음독 ${esc(k.on)} · 훈독 ${esc(k.kun)}</div>
+              <div class="extra">예) ${esc(k.ex)}（${esc(k.exKana)}）</div>
+            </div>
+          </div>`).join('')}
+        </div>`;
+      document.getElementById('kdBtn').onclick = () => {
+        const p = document.getElementById('kdPanel');
+        const opening = p.style.display === 'none';
+        p.style.display = opening ? 'block' : 'none';
+        document.getElementById('kdBtn').textContent = label(opening);
+        if (opening) track('kanji_detail_open');
+      };
+    }
+  }
 
   const main = document.getElementById('mainBtn');
   main.textContent = '다음 →';
