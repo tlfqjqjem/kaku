@@ -784,9 +784,12 @@ function renderSettings() {
   paintFoot('home');
 }
 
-/* ---------- 온보딩 (S0) — 첫 방문 3스텝 ---------- */
+/* ---------- 온보딩 (S0) — 첫 방문 4스텝 ---------- */
 function renderOnboarding(step) {
   step = step || 1;
+  // 레벨 화면(3단계)까지 왔으면 온보딩 완료로 확정 —
+  // 시험일을 입력하지 않거나 어느 단계에서 앱을 닫아도 온보딩이 반복되지 않음
+  if (step >= 3 && !S.onboarded) { S.onboarded = true; save(); }
   if (step === 1) {
     screen.innerHTML = `
       <div class="card" style="text-align:center">
