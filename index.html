@@ -316,7 +316,8 @@ const DEFAULTS = {
   progress: {},                  // itemId → { box, due, r, w }
   custom:   {},                  // "N5|word" → [ {kana,kanji,ko}, ... ]
   settings: { level:'N5', deck:'word', mode:'mix', size:20, speak:true,
-              targetLevel:'N3', examDate:null, dailyGoal:10, purpose:null, todayDeck:'word' },
+              targetLevel:'N3', examDate:null, dailyGoal:10, purpose:null, todayDeck:'word',
+              todayMode:'mix' },   // 오늘의 학습 출제 방식: mix(실력 맞춤) | type(타이핑) | choice(고르기)
   stats:    { daily:{}, streak:0, lastMet:null, settledIds:{} },
   onboarded: false,
   anonId: null            // 익명 인스턴스 ID (개인정보 아님, 리텐션 측정용)
@@ -741,6 +742,14 @@ function renderSettings() {
         ${st.examDate ? '<button class="chip" id="examClear">지우기</button>' : ''}
       </div>
 
+      <h2 style="margin-top:20px">오늘의 학습 출제 방식 <span class="box-tag">단어 덱</span></h2>
+      <div class="chips">
+        ${[['mix', '실력 맞춤', '첫 만남만 고르기, 이후 타이핑'],
+           ['type', '타이핑 위주', '항상 직접 써서 답하기'],
+           ['choice', '고르기 위주', '뜻 고르기 (회독식)']].map(([v, l, d]) =>
+          `<button class="chip ${(st.todayMode || 'mix') === v ? 'on' : ''}" data-tmode="${v}">${l}<small>${d}</small></button>`).join('')}
+      </div>
+
       <h2 style="margin-top:20px">일일 목표 (문항)</h2>
       <div class="chips" id="goalChips">
         ${[10, 20, 30, 50].map(n =>
@@ -778,6 +787,12 @@ function renderSettings() {
 
   screen.querySelectorAll('[data-tlv]').forEach(b =>
     b.onclick = () => { S.settings.targetLevel = b.dataset.tlv; save(); renderSettings(); });
+  screen.querySelectorAll('[data-tmode]').forEach(b =>
+    b.onclick = () => {
+      S.settings.todayMode = b.dataset.tmode; save();
+      track('today_mode_' + b.dataset.tmode);   // 타이핑 vs 회독 선호 측정 (가설 H1 보조 데이터)
+      renderSettings();
+    });
   screen.querySelectorAll('[data-speak]').forEach(b =>
     b.onclick = () => { S.settings.speak = b.dataset.speak === 'true'; save(); renderSettings(); });
   screen.querySelectorAll('[data-goal]').forEach(b =>
@@ -985,12 +1000,18 @@ function startOnboardSession() {
 }
 
 function pickKind(deck, box) {
-  // 오늘의 학습은 자유 학습에서 고른 방식과 무관하게 항상 실력 맞춤(mix)
-  const m = sessionMode === 'today' ? 'mix' : S.settings.mode;
+  let m;
+  if (sessionMode === 'today') {
+    // 오늘의 학습: 설정의 출제 방식을 따름 (한자 덱은 타이핑이 없으므로 실력 맞춤으로)
+    const tm = S.settings.todayMode || 'mix';
+    m = deck === 'word' && tm === 'type'   ? 'kanji2kana'
+      : deck === 'word' && tm === 'choice' ? 'kana2ko'
+      : 'mix';
+  } else m = S.settings.mode;
   if (m !== 'mix') return m;
   if (deck === 'word')
-    return box <= 1 ? 'kana2ko'      // 처음엔 고르기로 눈에 익히고
-         : 'kanji2kana';             // 익숙해지면 단어를 보고 읽기를 직접 타이핑
+    return box < 1 ? 'kana2ko'       // 첫 만남(상자0) 1회만 고르기로 눈익힘
+         : 'kanji2kana';             // 상자1부터는 항상 타이핑 — "쓰는 암기"가 기본
   return Math.random() < 0.5 ? 'kanji2ko' : 'ko2kanji';
 }
 
