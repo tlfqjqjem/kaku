@@ -35,19 +35,7 @@
   h1 { font-size: 21px; letter-spacing: -.02em; white-space: nowrap; }
   h1 span { color: var(--accent); }
   .tagline { font-size: 12px; color: var(--dim); }
-  @media (max-width: 480px) {
-    h1 { font-size: 17px; }        /* 모바일: 타이틀 한 줄 유지 */
-    .tagline { display: none; }    /* 부제는 좁은 화면에서 숨김 */
-    /* 문제 화면 압축 — 키보드가 올라와도 입력칸까지 다 보이게 */
-    body { padding: 12px 12px 40px; }
-    header { margin-bottom: 10px; }
-    .card { padding: 16px 14px; }
-    .qprompt { font-size: 28px; margin: 8px 0 4px; }
-    .qprompt.big { font-size: 50px; }
-    .qmeaning { font-size: 16px; }
-    .kana-view { min-height: 54px; font-size: 28px; margin: 12px 0 10px; }
-    .feedback { min-height: 40px; margin-top: 10px; }
-  }
+  /* (모바일 규칙은 케스케이드 순서 때문에 스타일시트 맨 끝에 있음) */
 
   /* ── 공통 ── */
   .card {
@@ -205,6 +193,21 @@
   kbd { background:#fff; border:1px solid var(--line); border-bottom-width:2px; border-radius:4px;
         padding:1px 5px; font-size:11px; font-family:inherit; }
   .warn { color: var(--no); }
+
+  /* ── 모바일 (맨 끝에 둬야 기본 규칙을 이김) ── */
+  @media (max-width: 480px) {
+    h1 { font-size: 17px; white-space: nowrap; }   /* 타이틀 한 줄 유지 */
+    .tagline { display: none; }                     /* 부제 숨김 */
+    /* 문제 화면 압축 — 키보드가 올라와도 입력칸까지 다 보이게 */
+    body { padding: 12px 12px 40px; }
+    header { margin-bottom: 10px; }
+    .card { padding: 16px 14px; }
+    .qprompt { font-size: 28px; margin: 8px 0 4px; }
+    .qprompt.big { font-size: 50px; }
+    .qmeaning { font-size: 16px; }
+    .kana-view { min-height: 54px; font-size: 28px; margin: 12px 0 10px; }
+    .feedback { min-height: 40px; margin-top: 10px; }
+  }
 </style>
 </head>
 <body>
