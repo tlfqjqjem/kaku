@@ -665,7 +665,9 @@ function renderHome() {
       </div>
       <div class="goalbar"><i class="${met ? 'done' : ''}" style="width:${Math.min(100, t.n / goal * 100)}%"></i></div>
       <div class="stat-strip">
-        <div class="stat-cell"><b style="${met ? 'color:var(--ok)' : ''}">${t.n}/${goal}${met ? ' ✓' : ''}</b><span>오늘 목표</span></div>
+        <div class="stat-cell"><b>${t.n}/${goal}</b><span>목표 ${met
+          ? '<em style="font-style:normal;font-weight:700;color:var(--accent)">완료</em>'
+          : '<em style="font-style:normal;font-weight:700;color:var(--ink)">미완료</em>'}</span></div>
         <div class="stat-cell"><b>${stw.due.toLocaleString()}</b><span>복습 만기</span></div>
         <div class="stat-cell"><b>${stw.fresh.toLocaleString()}</b><span>새 ${td === 'word' ? '단어' : '한자'}</span></div>
         <div class="stat-cell"><b>${mist.toLocaleString()}</b><span>오답</span></div>
