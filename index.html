@@ -322,7 +322,8 @@ const DEFAULTS = {
   onboarded: false,
   anonId: null,           // 익명 인스턴스 ID (개인정보 아님, 리텐션 측정용)
   firstDay: null,         // 첫 사용일 (YYYY-MM-DD) — D1/D7/D30 리텐션 계산 기준
-  ret: {}                 // 이미 보낸 리텐션 이벤트 표시 (d1/d7/d30, 중복 전송 방지)
+  ret: {},                // 이미 보낸 리텐션 이벤트 표시 (d1/d7/d30, 중복 전송 방지)
+  lastDailyVisit: null    // visit_daily(DAU)를 마지막으로 보낸 날 — 하루 1회만 전송
 };
 
 let S = load();
@@ -1396,6 +1397,8 @@ if (!S.anonId) { S.anonId = Math.random().toString(36).slice(2, 10); save(); }
 // 실행 환경 구분: PWA(홈 화면 설치) vs 일반 브라우저 → 설치율 측정
 const isPWA = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
 track(isPWA ? 'visit_pwa' : 'visit_browser');
+// 일일 방문(DAU): 기기당 하루에 딱 한 번만 전송 → "중복 없는 그날의 방문 기기 수"
+if (S.lastDailyVisit !== dstr()) { S.lastDailyVisit = dstr(); save(); track('visit_daily'); }
 // 리텐션(D1/D7/D30): 서버 없이 각 기기가 스스로 "첫 사용 후 며칠째"를 계산해서
 // 정확히 1·7·30일째 되는 날 다시 열면 한 번만 신호를 보냄 (기존 사용자는 학습 기록에서 첫날 소급)
 if (!S.firstDay) {
