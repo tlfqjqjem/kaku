@@ -1034,22 +1034,27 @@ function nextQ() {
   cur = queue.shift();
   if (!cur) return renderDone();
   curKind = sessionMode === 'onboard' ? 'kanji2kana' : pickKind(sessionDeck, cur.box);
-  // 한자 표기가 없는 단어(ぺこぺこ·ああ 등)는 qSpec에서 카타카나로 바꿔 제시 → 히라가나로 쓰기
-  // (예전엔 한글 뜻→쓰기로 대체했지만, 뜻만 보고 단어를 떠올리게 하는 건 무리라는 피드백으로 변경)
+  // 한자 표기가 없는 단어: 의성어(ぺこぺこ)는 카타카나로 제시해 받아쓰고,
+  // 그 외 히라가나 단어(あるいは 등)는 답이 그대로 보이므로 종전대로 뜻→쓰기로 대체
+  if (curKind === 'kanji2kana' && cur.it.kanji === cur.it.kana && !isMimetic(cur.it.kana))
+    curKind = 'ko2kana';
   renderQuiz();
 }
 
-/* 히라가나 → 카타카나 (한자 표기가 없는 단어의 문제 제시용) */
+/* 의성어·의태어(ぺこぺこ처럼 같은 소리가 반복되는 말)는 실제로 카타카나로도 자주 쓴다.
+   → 카타카나로 제시하고 히라가나로 받아쓰게 한다. (あるいは 같은 일반 히라가나 단어는 해당 없음) */
 const toKata = s => s.replace(/[ぁ-ゖ]/g, c => String.fromCharCode(c.charCodeAt(0) + 0x60));
+const isMimetic = s => s.length >= 4 && s.length % 2 === 0
+  && s.slice(0, s.length / 2) === s.slice(s.length / 2);
 
 /* 문제 유형별 정의 */
 function qSpec() {
   const it = cur.it;
-  const noKanji = it.kanji === it.kana;   // 한자 표기가 없는 단어(의성어·히라가나 단어)
+  const mimetic = it.kanji === it.kana;   // 여기까지 온 무한자 단어는 의성어뿐 (nextQ에서 걸러짐)
   switch (curKind) {
     case 'ko2kana':    return { label:'이 뜻의 단어를 히라가나로 써보세요', prompt: it.ko,    big:false, type:'write',  answer: it.kana, audio: it.kana };
-    case 'kanji2kana': return { label: noKanji ? '이 단어를 히라가나로 써보세요' : '이 단어의 읽는 법을 로마자로 써보세요',
-                                prompt: noKanji ? toKata(it.kanji) : it.kanji, big:false, type:'write', answer: it.kana, audio: it.kana };
+    case 'kanji2kana': return { label: mimetic ? '이 단어를 히라가나로 써보세요' : '이 단어의 읽는 법을 로마자로 써보세요',
+                                prompt: mimetic ? toKata(it.kanji) : it.kanji, big:false, type:'write', answer: it.kana, audio: it.kana };
     case 'kana2ko':    return { label:'이 단어의 뜻은?',                     prompt: it.kanji, big:false, type:'choose', answer: it.ko,   field:'ko',  audio: it.kana,
                                 hintKana: it.kanji !== it.kana ? it.kana : '' };   // 한자를 크게, 읽기는 아래 작게
     case 'kanji2ko':   return { label:'이 한자의 뜻은?',                     prompt: it.ch,    big:true,  type:'choose', answer: it.ko,   field:'ko',  audio: it.exKana };
