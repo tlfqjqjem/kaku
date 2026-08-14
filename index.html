@@ -94,7 +94,10 @@
   .goalbar { height: 10px; background: var(--line); border-radius: 99px; overflow: hidden; margin: 12px 0 8px; }
   .goalbar i { display: block; height: 100%; background: var(--accent); border-radius: 99px; transition: width .3s; }
   .goalbar i.done { background: var(--ok); }
-  .dash-counts { font-size: 13px; color: var(--sub); }
+  .stat-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 10px; }
+  .stat-cell { background: var(--bg); border-radius: 10px; padding: 8px 2px; text-align: center; }
+  .stat-cell b { display: block; font-size: 15px; letter-spacing: -0.3px; }
+  .stat-cell span { font-size: 11px; color: var(--dim); }
 
   /* ── 통계 (S5) ── */
   .statbig { font-size: 44px; font-weight: 800; color: var(--accent); text-align: center; margin: 4px 0; }
@@ -652,7 +655,8 @@ function renderHome() {
   screen.innerHTML = `
     <div class="card">
       <div class="dash-top">
-        <span>🔥 ${streakNow()}일째</span>
+        <span>🔥 ${streakNow()}일째 &nbsp;<a href="#" id="tlvBadge"
+          style="color:var(--accent);font-weight:700;text-decoration:none">🎯 ${lvl}</a></span>
         <span>${dday === null
           ? '<a href="#" id="setExam" style="color:var(--dim);font-size:12px;font-weight:400;text-decoration:none">시험일 등록 →</a>'
           : dday >= 0
@@ -660,10 +664,11 @@ function renderHome() {
             : '<a href="#" id="setExam" style="color:var(--no);font-size:12px;text-decoration:none">시험일 지남 · 새 목표 →</a>'}</span>
       </div>
       <div class="goalbar"><i class="${met ? 'done' : ''}" style="width:${Math.min(100, t.n / goal * 100)}%"></i></div>
-      <div class="dash-counts">
-        <a href="#" id="tlvBadge" style="color:var(--accent);font-weight:700;text-decoration:none">🎯 ${lvl}</a>
-        &nbsp;·&nbsp; 오늘 목표 <b>${t.n}/${goal}</b>${met ? ' · <b style="color:var(--ok)">달성!</b>' : ''}
-        &nbsp;·&nbsp; 📥 복습 만기 <b>${stw.due}</b> · 🆕 새 ${td === 'word' ? '단어' : '한자'} <b>${stw.fresh}</b> · 📕 오답 <b>${mist}</b>
+      <div class="stat-strip">
+        <div class="stat-cell"><b style="${met ? 'color:var(--ok)' : ''}">${t.n}/${goal}${met ? ' ✓' : ''}</b><span>오늘 목표</span></div>
+        <div class="stat-cell"><b>${stw.due.toLocaleString()}</b><span>복습 만기</span></div>
+        <div class="stat-cell"><b>${stw.fresh.toLocaleString()}</b><span>새 ${td === 'word' ? '단어' : '한자'}</span></div>
+        <div class="stat-cell"><b>${mist.toLocaleString()}</b><span>오답</span></div>
       </div>
       <div class="chips" id="todayDeckChips" style="margin-top:12px">
         ${[['word', '단어'], ['kanji', '한자']].map(([v, l]) =>
