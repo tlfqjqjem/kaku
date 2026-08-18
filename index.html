@@ -94,6 +94,14 @@
   .goalbar { height: 10px; background: var(--line); border-radius: 99px; overflow: hidden; margin: 12px 0 8px; }
   .goalbar i { display: block; height: 100%; background: var(--accent); border-radius: 99px; transition: width .3s; }
   .goalbar i.done { background: var(--ok); }
+  .install-tip { position: relative; background: var(--accent-soft); border: 1px solid #fed7aa;
+                 border-radius: 14px; padding: 14px 42px 14px 16px; margin-top: 12px;
+                 font-size: 13px; color: var(--sub); line-height: 1.65; }
+  .install-tip b.t { display: block; color: var(--ink); margin-bottom: 3px; font-size: 13.5px; }
+  .install-tip #installX { position: absolute; top: 7px; right: 9px; background: none;
+                           border: none; color: var(--dim); font-size: 13px; cursor: pointer; padding: 5px; }
+  .btn-inst { background: var(--accent); color: #fff; border: none; border-radius: 9px;
+              padding: 8px 15px; font-size: 13px; font-weight: 700; cursor: pointer; margin-top: 7px; }
   .stat-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 10px; }
   .stat-cell { background: var(--bg); border-radius: 10px; padding: 8px 2px; text-align: center; }
   .stat-cell b { display: block; font-size: 15px; letter-spacing: -0.3px; }
@@ -327,7 +335,9 @@ const DEFAULTS = {
   firstDay: null,         // 첫 사용일 (YYYY-MM-DD) — D1/D7/D30 리텐션 계산 기준
   ret: {},                // 이미 보낸 리텐션 이벤트 표시 (d1/d7/d30, 중복 전송 방지)
   lastDailyVisit: null,   // visit_daily(DAU)를 마지막으로 보낸 날 — 하루 1회만 전송
-  channel: null           // 유입 채널 (?from=... 첫 방문 값만 보관, 이후 덮어쓰지 않음)
+  channel: null,          // 유입 채널 (?from=... 첫 방문 값만 보관, 이후 덮어쓰지 않음)
+  installHidden: false,   // 홈 화면 추가 안내를 사용자가 닫았는지
+  installShown: false     // 안내를 한 번이라도 보여줬는지 (노출 이벤트 중복 방지)
 };
 
 let S = load();
@@ -643,6 +653,52 @@ function renderFree() {
   paintFoot('free');
 }
 
+/* ── 홈 화면 추가(설치) 안내 ─────────────────────────────
+   iOS 사파리는 설치 버튼을 제공하지 않아 안내가 없으면 설치 자체를 모른다.
+   크롬 계열은 beforeinstallprompt로 진짜 설치창을 띄울 수 있다.
+   이미 설치했거나(PWA 실행) 사용자가 닫았으면 다시 보여주지 않는다. */
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault(); deferredPrompt = e;
+  if (document.getElementById('todayBtn')) renderHome();   // 홈이 떠 있으면 버튼을 반영해 다시 그림
+});
+const isIOSDevice = () => /iphone|ipad|ipod/i.test(navigator.userAgent)
+  || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+function installKind() {
+  if (isPWA || S.installHidden) return null;   // 이미 앱으로 쓰는 중이거나 닫음
+  if (deferredPrompt) return 'button';         // 크롬 계열: 설치 버튼
+  if (isIOSDevice()) return 'ios';             // 사파리: 수동 안내
+  return null;                                 // 데스크톱 등은 표시하지 않음
+}
+function installTipHTML() {
+  const k = installKind();
+  if (!k) return '';
+  return `<div class="install-tip" id="installTip">
+      <button id="installX" title="닫기">✕</button>
+      <b class="t">📲 홈 화면에 추가하면 매일 한 번에 열려요</b>
+      ${k === 'button'
+        ? '<button class="btn-inst" id="installBtn">홈 화면에 추가</button>'
+        : '공유 버튼 <b>⬆︎</b> 을 누르고 <b>홈 화면에 추가</b>를 선택하면 앱처럼 실행돼요.'}
+    </div>`;
+}
+function wireInstallTip() {
+  const tip = document.getElementById('installTip');
+  if (!tip) return;
+  if (!S.installShown) { S.installShown = true; save(); track('install_hint_shown'); }
+  document.getElementById('installX').onclick = () => {
+    S.installHidden = true; save(); track('install_dismiss'); tip.remove();
+  };
+  const b = document.getElementById('installBtn');
+  if (b) b.onclick = async () => {
+    track('install_click');
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const r = await deferredPrompt.userChoice.catch(() => null);
+    deferredPrompt = null;
+    if (r && r.outcome === 'accepted') { track('install_done'); S.installHidden = true; save(); tip.remove(); }
+  };
+}
+
 /* ---------- 홈 (S1 대시보드) — 매일의 진입점 ---------- */
 function renderHome() {
   const lvl = S.settings.targetLevel;
@@ -689,6 +745,7 @@ function renderHome() {
         <button class="ghost" id="settingsBtn">⚙️ 설정</button>
       </div>
     </div>
+    ${installTipHTML()}
   `;
   screen.querySelectorAll('[data-tdeck]').forEach(b =>
     b.onclick = () => { S.settings.todayDeck = b.dataset.tdeck; save(); renderHome(); });
@@ -700,6 +757,7 @@ function renderHome() {
   document.getElementById('settingsBtn').onclick = renderSettings;
   const se = document.getElementById('setExam');
   if (se) se.onclick = e => { e.preventDefault(); renderSettings(); };
+  wireInstallTip();
   paintFoot('home');
 }
 
