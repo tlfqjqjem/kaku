@@ -326,7 +326,8 @@ const DEFAULTS = {
   anonId: null,           // 익명 인스턴스 ID (개인정보 아님, 리텐션 측정용)
   firstDay: null,         // 첫 사용일 (YYYY-MM-DD) — D1/D7/D30 리텐션 계산 기준
   ret: {},                // 이미 보낸 리텐션 이벤트 표시 (d1/d7/d30, 중복 전송 방지)
-  lastDailyVisit: null    // visit_daily(DAU)를 마지막으로 보낸 날 — 하루 1회만 전송
+  lastDailyVisit: null,   // visit_daily(DAU)를 마지막으로 보낸 날 — 하루 1회만 전송
+  channel: null           // 유입 채널 (?from=... 첫 방문 값만 보관, 이후 덮어쓰지 않음)
 };
 
 let S = load();
@@ -388,7 +389,7 @@ function recordAnswer(correct, settled) {
   const d = S.stats.daily[k] || (S.stats.daily[k] = { n: 0, c: 0, s: 0 });
   d.n++; if (correct) d.c++; if (settled) d.s++;
   track(correct ? 'answer_o' : 'answer_x');   // 일일 학습량·정답률 (날짜별 총합으로 집계)
-  if (settled) track('word_settled');          // ⭐ North Star: 단어가 상자4(정착)에 첫 도달
+  if (settled) track('word_settled', true);          // ⭐ North Star: 단어가 상자4(정착)에 첫 도달
   // 오늘 목표를 채우는 순간 streak 판정 (그날의 목표값 기준, 소급 없음)
   if (d.n >= S.settings.dailyGoal && S.stats.lastMet !== k) {
     S.stats.streak = (S.stats.lastMet === yesterdayStr()) ? S.stats.streak + 1 : 1;
@@ -413,12 +414,14 @@ function streakNow() {
 const ANALYTICS = 'https://kaku.goatcounter.com/count';
 /* 피드백 폼(구글폼 등) 주소 — 비어 있으면 설정 화면에 버튼이 표시되지 않음 */
 const FEEDBACK_URL = 'https://forms.gle/jidwCiLMXNxNUiLR7';
-function track(event) {
+function track(event, withChannel) {
   try {
     if (!ANALYTICS) return;
     const seg = `${S.settings.purpose || 'none'}-${S.settings.targetLevel}-${S.settings.examDate ? 'exam' : 'noexam'}`;
+    /* 유입 채널은 경로 종류가 폭증하지 않도록 핵심 지표(유입·온보딩 완료·리텐션·정착)에만 붙인다 */
+    const ch = withChannel ? '/' + (S.channel || 'direct') : '';
     new Image().src = ANALYTICS
-      + '?p=' + encodeURIComponent('/' + event + '/' + seg)
+      + '?p=' + encodeURIComponent('/' + event + '/' + seg + ch)
       + '&e=true&rnd=' + Date.now() + '_' + (S.anonId || '');
   } catch (e) { /* 수집 실패는 조용히 무시 */ }
 }
@@ -1239,7 +1242,7 @@ function grade(raw, gaveUp, btn) {
 
 /* ---------- 결과 ---------- */
 function renderDone() {
-  if (sessionMode === 'onboard') { S.onboarded = true; save(); track('onboard_done'); }   // 첫 세션 완료 = 온보딩 끝
+  if (sessionMode === 'onboard') { S.onboarded = true; save(); track('onboard_done', true); }   // 첫 세션 완료 = 온보딩 끝
   else track('session_complete');
   const total = right + wrong;
   const pct = total ? Math.round(right / total * 100) : 0;
@@ -1411,11 +1414,19 @@ function paintFoot(mode) {
 
 /* ── 시작 ── */
 if (!S.anonId) { S.anonId = Math.random().toString(36).slice(2, 10); save(); }
+/* 유입 채널: 홍보 링크의 ?from=cafe 같은 값을 첫 방문 때 한 번만 기록(first-touch).
+   이미 값이 있으면 덮어쓰지 않는다 — 처음 데려온 채널의 성과로 계속 귀속시키기 위함 */
+if (!S.channel) {
+  const q = new URLSearchParams(location.search);
+  const raw = (q.get('from') || q.get('utm_source') || '').toLowerCase();
+  const ch = raw.replace(/[^a-z0-9-]/g, '').slice(0, 16);
+  if (ch) { S.channel = ch; save(); }
+}
 // 실행 환경 구분: PWA(홈 화면 설치) vs 일반 브라우저 → 설치율 측정
 const isPWA = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
 track(isPWA ? 'visit_pwa' : 'visit_browser');
 // 일일 방문(DAU): 기기당 하루에 딱 한 번만 전송 → "중복 없는 그날의 방문 기기 수"
-if (S.lastDailyVisit !== dstr()) { S.lastDailyVisit = dstr(); save(); track('visit_daily'); }
+if (S.lastDailyVisit !== dstr()) { S.lastDailyVisit = dstr(); save(); track('visit_daily', true); }
 // 리텐션(D1/D7/D30): 서버 없이 각 기기가 스스로 "첫 사용 후 며칠째"를 계산해서
 // 정확히 1·7·30일째 되는 날 다시 열면 한 번만 신호를 보냄 (기존 사용자는 학습 기록에서 첫날 소급)
 if (!S.firstDay) {
@@ -1424,7 +1435,7 @@ if (!S.firstDay) {
 }
 const sinceDays = Math.round((new Date(dstr() + 'T00:00:00') - new Date(S.firstDay + 'T00:00:00')) / DAY);
 for (const n of [1, 7, 30]) {
-  if (sinceDays === n && !S.ret['d' + n]) { S.ret['d' + n] = 1; save(); track('return_d' + n); }
+  if (sinceDays === n && !S.ret['d' + n]) { S.ret['d' + n] = 1; save(); track('return_d' + n, true); }
 }
 // 실사용 중 JS 오류 감지 (로드당 1회만 — 스팸 방지)
 let errTracked = false;
