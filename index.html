@@ -673,12 +673,17 @@ function installKind() {
 function installTipHTML() {
   const k = installKind();
   if (!k) return '';
+  /* iOS는 사파리와 홈 화면 앱의 저장 공간이 분리되어 학습 기록이 넘어가지 않는다(2026-08-14 실기기 확인).
+     그래서 "공부한 뒤 추가"가 아니라 "추가하고 시작"으로 유도한다. 안드로이드는 기록이 공유되므로 해당 없음 */
   return `<div class="install-tip" id="installTip">
       <button id="installX" title="닫기">✕</button>
-      <b class="t">📲 홈 화면에 추가하면 매일 한 번에 열려요</b>
       ${k === 'button'
-        ? '<button class="btn-inst" id="installBtn">홈 화면에 추가</button>'
-        : '공유 버튼 <b>⬆︎</b> 을 누르고 <b>홈 화면에 추가</b>를 선택하면 앱처럼 실행돼요.'}
+        ? '<b class="t">📲 홈 화면에 추가하면 매일 한 번에 열려요</b>'
+          + '<button class="btn-inst" id="installBtn">홈 화면에 추가</button>'
+        : '<b class="t">📲 먼저 홈 화면에 추가하고 시작하세요</b>'
+          + '공유 버튼 <b>⬆︎</b> → <b>홈 화면에 추가</b>. '
+          + '아이폰은 <b>브라우저와 앱의 학습 기록이 따로 저장</b>돼서, 추가한 앱으로 공부해야 기록이 한곳에 쌓여요.'
+          + '<br><span style="color:var(--dim);font-size:12px">이미 여기서 공부하셨다면 ⚙️ 설정 → 내보내기 → 추가한 앱에서 가져오기</span>'}
     </div>`;
 }
 function wireInstallTip() {
