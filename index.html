@@ -942,6 +942,16 @@ function obTrack(step) {
   if (!obTracked[step]) { obTracked[step] = 1; track('onboard_step' + step); }
 }
 
+/* 첫 세션(5문항) 문항별 계측 — onboard_session(107) → onboard_done(35) 사이에서
+   어느 문제에서 나가는지 위치를 모르던 문제를 메우기 위한 퍼널.
+     onboard_q1~q5        : 문제 화면 도달
+     onboard_q{n}_ok|_no  : 그 문제의 채점 결과 (정답/오답)
+   qN에 도달했다 = q(N-1)을 풀었다 이므로, 이탈 지점이 한 문제 단위로 잡힌다. */
+let obqTracked = {};
+function obqTrack(n) {
+  if (n >= 1 && n <= 5 && !obqTracked['q' + n]) { obqTracked['q' + n] = 1; track('onboard_q' + n); }
+}
+
 function renderOnboarding(step) {
   step = step || 1;
   obTrack(step);
@@ -997,23 +1007,73 @@ function renderOnboarding(step) {
       S.settings.targetLevel = b.dataset.oblv; S.settings.level = b.dataset.oblv; save(); renderOnboarding(3);
     });
     document.getElementById('ob2').onclick = () => renderOnboarding(4);
-  } else {
+  } else if (step === 4) {
     screen.innerHTML = `
       <div class="card">
         <h2>JLPT 시험일이 있나요? <span class="box-tag">선택</span></h2>
         <p class="note">등록하면 홈에 D-day가 표시돼요. 일일 목표는 <b>10문항</b>으로 시작합니다 (설정에서 변경 가능).</p>
         <input type="date" id="obDate" class="chip-input" style="width:100%;border-radius:10px;text-align:center">
         <div class="row">
-          <button id="ob3">첫 학습 시작 (5문항) →</button>
+          <button id="ob3">시작하기 →</button>
           <button class="ghost narrow" id="obSkip">건너뛰기</button>
         </div>
       </div>`;
     document.getElementById('ob3').onclick = () => {
       const v = document.getElementById('obDate').value;
       if (v) { S.settings.examDate = v; track('exam_date_set'); }
-      save(); startOnboardSession();
+      save(); renderOnboarding(5);
     };
-    document.getElementById('obSkip').onclick = () => { save(); startOnboardSession(); };
+    document.getElementById('obSkip').onclick = () => { save(); renderOnboarding(5); };
+  } else {
+    /* 타이핑 튜토리얼 — 채점되는 첫 문제 앞에서 '로마자 → 히라가나' 입력을 손으로 한 번 겪게 한다.
+       첫 화면의 mizu → みず는 읽고 지나가는 정적 텍스트라, 로마자 입력이 처음인 사람은
+       연습 없이 바로 채점부터 만나게 되던 구간.
+       이 단계는 실패할 수 없어야 하므로 ① 정답을 미리 보여주고 ② 다 치면 자동 통과,
+       ③ 못 하는 사람이 갇히지 않게 탈출구를 띄운다 (세션이 끝나지 않던 버그와 같은 함정을 만들지 않기 위해). */
+    const TUT_ROMAJI = 'mizu', TUT_KANA = 'みず';
+    screen.innerHTML = `
+      <div class="card" style="text-align:center">
+        <p class="qlabel">먼저 입력하는 법만 익혀볼게요</p>
+        <p class="qprompt big">水</p>
+        <p class="qmeaning show">${TUT_KANA} · 물</p>
+        <p class="extra" style="margin-top:10px">아래 칸에 <b style="color:var(--accent)">${TUT_ROMAJI}</b> 를 입력해 보세요</p>
+        <div class="kana-view empty" id="tutView">여기에 히라가나가 나타납니다</div>
+        <input type="text" id="tutInput" autocomplete="off" autocapitalize="off"
+               spellcheck="false" placeholder="${TUT_ROMAJI}">
+        <div class="feedback" id="tutFb"></div>
+        <p class="note" id="tutEsc" style="margin-top:12px;visibility:hidden">
+          <a href="#" id="tutSkip" style="color:var(--dim)">그냥 시작하기</a>
+        </p>
+      </div>`;
+
+    const tIn = document.getElementById('tutInput');
+    const tView = document.getElementById('tutView');
+    const tFb = document.getElementById('tutFb');
+    const tEsc = document.getElementById('tutEsc');
+    let tDone = false;
+
+    const showEsc = () => { if (!tDone) tEsc.style.visibility = 'visible'; };
+    const escTimer = setTimeout(showEsc, 10000);   // 10초간 통과 못 하면 탈출구 노출
+
+    tIn.oninput = () => {
+      if (tDone) return;
+      const k = toKana(tIn.value);
+      tView.textContent = k || '여기에 히라가나가 나타납니다';
+      tView.className = 'kana-view' + (k ? '' : ' empty');
+      if (tIn.value.length >= 8) showEsc();         // 엉뚱하게 길어지면 기다리지 않고 바로 노출
+      if (k === TUT_KANA) {
+        tDone = true; clearTimeout(escTimer);
+        tIn.disabled = true; tEsc.style.visibility = 'hidden';
+        tFb.className = 'feedback right';
+        tFb.innerHTML = '<span class="verdict">이렇게 직접 써서 외웁니다</span><br>이제 5문제만 풀어볼게요';
+        setTimeout(() => { track('onboard_tut_ok'); startOnboardSession(); }, 1200);
+      }
+    };
+    document.getElementById('tutSkip').onclick = e => {
+      e.preventDefault(); tDone = true; clearTimeout(escTimer);
+      track('onboard_tut_skip'); startOnboardSession();
+    };
+    tIn.focus();
   }
   paintFoot('onboard');
 }
@@ -1068,6 +1128,7 @@ function startOnboardSession() {
   // 다음에 온보딩이 다시 나오지 않게 (레벨·시험일 입력이 끝났으면 온보딩은 끝)
   S.onboarded = true; save();
   track('onboard_session');   // 퍼널: 첫 세션 진입
+  obqTracked = {};            // 문항별 계측 초기화
   sessionMode = 'onboard'; sessionDeck = 'word'; sessionLevel = lvl;
   queue = basePoolOf(lvl, 'word').slice(0, 5).map(it =>
     ({ it, id: idOf(lvl, 'word', it), lv: lvl, box: 0, due: null, isNew: true }));
@@ -1137,13 +1198,15 @@ function distractors(field, correct, n = 3) {
 
 function renderQuiz() {
   const q = qSpec();
+  // done = 이 세션에서 이미 끝낸(맞힌) 단어 수. 틀린 단어는 큐로 되돌아가므로 여기 포함되지 않는다.
   const done = sessionLen - queue.length - 1;
+  if (sessionMode === 'onboard') obqTrack(done + 1);   // 첫 세션은 재출제가 없어 done+1 = 문항 번호
 
   screen.innerHTML = `
     <div class="card">
       <div class="qbar"><i style="width:${done / sessionLen * 100}%"></i></div>
       <div class="qmeta">
-        <span>${({ mistake: '📕 오답 · ' + cur.lv, today: '오늘의 학습', onboard: '첫 학습' })[sessionMode] || sessionLevel} · ${sessionDeck === 'word' ? '단어' : '한자'} · ${done + 1}/${sessionLen}</span>
+        <span>${({ mistake: '📕 오답 · ' + cur.lv, today: '오늘의 학습', onboard: '첫 학습' })[sessionMode] || sessionLevel} · ${sessionDeck === 'word' ? '단어' : '한자'} · ${sessionMode === 'onboard' ? (done + 1) + '/' + sessionLen : '끝낸 ' + done + '/' + sessionLen}</span>
         <span>⭕ ${right} &nbsp; ❌ ${wrong} &nbsp;<span class="box-tag">상자 ${cur.box}/${MAXBOX}</span>
           <button class="speak" id="speakToggle" title="발음 자동 재생 켜기/끄기">${S.settings.speak ? '🔊' : '🔇'}</button></span>
       </div>
@@ -1219,9 +1282,13 @@ function grade(raw, gaveUp, btn) {
   checked = true;
   // 온보딩 첫 세션은 맛보기 — SRS·일일 집계·오답 노트에 아무 기록도 남기지 않음
   if (sessionMode !== 'onboard') recordAnswer(correct, applyResult(cur.id, correct));
+  else track('onboard_q' + (sessionLen - queue.length) + (correct ? '_ok' : '_no'));   // 문항별 정답/오답
 
   if (correct) right++;
-  else { wrong++; missed.push(it); queue.splice(Math.min(3, queue.length), 0, cur); }
+  // 틀린 단어는 세션 안에서 다시 출제한다. 단 온보딩 첫 세션은 예외 —
+  // 처음 온 사람은 로마자 입력이 낯설어 틀릴 확률이 높은데, 재출제를 하면
+  // 약속한 '5문항'이 틀린 만큼 늘어나고 진행 표시도 멈춰 세션이 끝나지 않는 것처럼 보인다.
+  else { wrong++; missed.push(it); if (sessionMode !== 'onboard') queue.splice(Math.min(3, queue.length), 0, cur); }
 
   const fb = document.getElementById('feedback');
   // 채점되는 순간, 문제에서 숨겨져 있던 답을 문제 바로 아래 강조 배지로 표시
