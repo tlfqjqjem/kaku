@@ -507,6 +507,61 @@ const dstr = d => { const t = d || new Date();
 const yesterdayStr = () => { const t = new Date(); t.setDate(t.getDate() - 1); return dstr(t); };
 const todayStat = () => S.stats.daily[dstr()] || { n: 0, c: 0, s: 0 };
 
+/* JLPT는 매년 7월·12월 첫째 일요일. 오늘 이후의 시험일 n개를 YYYY-MM-DD로 돌려준다. */
+function nextJlptDates(n = 2) {
+  const out = [], today = new Date(); today.setHours(0, 0, 0, 0);
+  for (let y = today.getFullYear(); out.length < n; y++)
+    for (const m of [6, 11]) {                                  // 7월, 12월
+      const d = new Date(y, m, 1); d.setDate(1 + (7 - d.getDay()) % 7);   // 첫째 일요일
+      if (d > today && out.length < n) out.push(dstr(d));
+    }
+  return out;
+}
+const fmtKoDate = s => { const [y, m, d] = s.split("-"); return `${y}년 ${+m}월 ${+d}일`; };
+
+/* 시험일 선택기 (온보딩·설정 공용). 다가오는 JLPT 2개는 버튼, 그 외는 직접 입력.
+   iOS 사파리는 날짜 입력을 탭하는 순간 값을 "오늘"로 채우고 취소 버튼이 없어서,
+   고르지 않고 나와도 오늘 날짜가 남는다. 그래서 ① 기본 경로를 버튼으로 두고
+   ② 직접 입력에서 "오늘"은 iOS 자동 채움으로 간주해 무시한다 (시험이 오늘일 일은 없다). */
+function examPickerHTML(current) {
+  const dates = nextJlptDates(2);
+  const custom = current && !dates.includes(current);
+  return `
+    <div class="chips" id="examPick">
+      ${dates.map(d => `<button class="chip ${current === d ? "on" : ""}" data-exam="${d}">${fmtKoDate(d)}<small>${+d.slice(5, 7)}월 시험</small></button>`).join("")}
+      <button class="chip ${custom ? "on" : ""}" id="examCustom">직접 입력<small>다른 날짜</small></button>
+    </div>
+    <input type="date" id="examDate" class="chip-input" value="${custom ? current : ""}"
+           style="width:100%;text-align:center;margin-top:10px;${custom ? "" : "display:none"}">`;
+}
+/* 선택 결과. 값이 없거나 iOS 자동 채움(오늘)이면 null */
+function readExamPicker(root) {
+  const on = root.querySelector("#examPick [data-exam].on");
+  if (on) return on.dataset.exam;
+  const v = root.querySelector("#examDate").value;
+  return v && v !== dstr() ? v : null;
+}
+/* 버튼·직접 입력 배선. onPick(날짜|null)은 값이 확정될 때마다 호출 */
+function wireExamPicker(root, onPick) {
+  const inp = root.querySelector("#examDate"), cust = root.querySelector("#examCustom");
+  root.querySelectorAll("#examPick [data-exam]").forEach(b => b.onclick = () => {
+    const was = b.classList.contains("on");
+    root.querySelectorAll("#examPick .chip").forEach(c => c.classList.remove("on"));
+    if (!was) b.classList.add("on");                              // 다시 누르면 해제
+    inp.style.display = "none"; inp.value = "";
+    onPick(was ? null : b.dataset.exam);
+  });
+  cust.onclick = () => {
+    root.querySelectorAll("#examPick [data-exam]").forEach(c => c.classList.remove("on"));
+    cust.classList.add("on"); inp.style.display = ""; inp.focus();
+  };
+  inp.onchange = () => {
+    if (inp.value === dstr()) inp.value = "";                     // iOS 자동 채움은 비운다
+    const v = readExamPicker(root);
+    if (v) onPick(v);   // 고르지 않고 나온 경우는 아무것도 바꾸지 않는다 (기존 등록일 보존)
+  };
+}
+
 function recordAnswer(correct, settled) {
   const k = dstr();   // 자정 걸친 세션: 채점 시점 날짜로 집계
   const d = S.stats.daily[k] || (S.stats.daily[k] = { n: 0, c: 0, s: 0 });
@@ -926,11 +981,9 @@ function renderSettings() {
       <div class="chips">${LEVELS.map(lv =>
         `<button class="chip ${st.targetLevel === lv ? 'on' : ''}" data-tlv="${lv}">${lv}</button>`).join('')}</div>
 
-      <h2 style="margin-top:20px">JLPT 시험일</h2>
-      <div class="chips">
-        <input type="date" id="examDate" class="chip-input" style="width:170px;border-radius:10px" value="${st.examDate || ''}">
-        ${st.examDate ? '<button class="chip" id="examClear">지우기</button>' : ''}
-      </div>
+      <h2 style="margin-top:20px">JLPT 시험일 <span class="box-tag">7월·12월 첫째 일요일</span></h2>
+      ${examPickerHTML(st.examDate)}
+      ${st.examDate ? `<p class="note" style="margin:8px 0 0">등록됨: <b>${fmtKoDate(st.examDate)}</b> · <a href="#" id="examClear" style="color:var(--dim)">지우기</a></p>` : ''}
 
       <h2 style="margin-top:20px">오늘의 학습 출제 방식</h2>
       <div class="chips">
@@ -992,12 +1045,13 @@ function renderSettings() {
       S.settings.dailyGoal = nv; save(); renderSettings();
     });
 
-  document.getElementById('examDate').onchange = e => {
-    if (e.target.value) track('exam_date_set');   // D-day 기능 수요
-    S.settings.examDate = e.target.value || null; save(); renderSettings();
-  };
+  wireExamPicker(screen, d => {
+    if (d === S.settings.examDate) return;
+    if (d) track('exam_date_set');   // D-day 기능 수요
+    S.settings.examDate = d; save(); renderSettings();
+  });
   const ec = document.getElementById('examClear');
-  if (ec) ec.onclick = () => { S.settings.examDate = null; save(); renderSettings(); };
+  if (ec) ec.onclick = e => { e.preventDefault(); S.settings.examDate = null; save(); renderSettings(); };
 
   const gc = document.getElementById('goalCustom');
   gc.onkeydown = e => { if (e.key === 'Enter') gc.blur(); };
@@ -1125,14 +1179,15 @@ function renderOnboarding(step) {
       <div class="card">
         <h2>JLPT 시험일이 있나요? <span class="box-tag">선택</span></h2>
         <p class="note">등록하면 홈에 D-day가 표시돼요. 일일 목표는 <b>10문항</b>으로 시작합니다 (설정에서 변경 가능).</p>
-        <input type="date" id="obDate" class="chip-input" style="width:100%;text-align:center">
+        ${examPickerHTML(null)}
         <div class="row">
           <button id="ob3">시작하기 →</button>
           <button class="ghost narrow" id="obSkip">건너뛰기</button>
         </div>
       </div>`;
+    wireExamPicker(screen, () => {});
     document.getElementById('ob3').onclick = () => {
-      const v = document.getElementById('obDate').value;
+      const v = readExamPicker(screen);
       if (v) { S.settings.examDate = v; track('exam_date_set'); }
       save(); renderOnboarding(5);
     };
