@@ -151,6 +151,13 @@
   .chip-input::-webkit-outer-spin-button, .chip-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
   .chip-input:focus { border-color: var(--ink); }
   .chip-input.on { border-color: var(--accent); color: var(--accent); font-weight: 600; }
+  /* iOS 사파리의 날짜 입력은 기본 외형이 지정 폭을 무시하고 옆으로 삐져나온다 */
+  input[type=date].chip-input {
+    -webkit-appearance: none; appearance: none; display: block;
+    width: 100%; min-width: 0; max-width: 100%; min-height: 44px;
+    border-radius: var(--r); overflow: hidden; color: var(--ink);
+  }
+  input[type=date].chip-input::-webkit-date-and-time-value { text-align: center; }
 
   /* ── 대시보드 (S1): 장부 ── */
   .dash-top {
@@ -195,7 +202,7 @@
   .lv-bar i { display: block; height: 100%; }
   .lv-bar .learned { background: var(--ok); }
   .lv-bar .learning { background: var(--accent); }
-  .lv-num { font-size: 11px; color: var(--sub); width: 108px; text-align: right; flex: 0 0 auto; font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+  .lv-num { font-size: 11px; color: var(--sub); width: 124px; text-align: right; flex: 0 0 auto; font-family: var(--f-mono); font-variant-numeric: tabular-nums; line-height: 1.6; white-space: nowrap; }
   .lv-num b { color: var(--accent); font-weight: 500; }
 
   /* ── 퀴즈: 활판 위의 한 글자 ── */
@@ -220,7 +227,7 @@
     display: none; width: fit-content; margin: 10px auto 0;
     font-family: var(--f-serif); font-size: 16px; font-weight: 700; color: var(--accent);
     border: 1.5px solid var(--accent); border-radius: 2px; padding: 4px 14px;
-    letter-spacing: .08em; transform: rotate(-1.5deg);
+    letter-spacing: .08em;
   }
   .qmeaning.show { display: block; animation: stamp .28s cubic-bezier(.2,.9,.3,1.3) both; }
 
@@ -266,7 +273,7 @@
   .opt.is-wrong { border-color: var(--no); color: var(--no); box-shadow: 0 2px 0 var(--no); }
 
   .feedback { margin-top: 14px; text-align: center; font-size: 15px; line-height: 1.75; min-height: 56px; }
-  .verdict { font-weight: 700; font-family: var(--f-serif); display: inline-block; letter-spacing: .04em; transform: rotate(-1.5deg); }
+  .verdict { font-weight: 700; font-family: var(--f-serif); display: inline-block; letter-spacing: .04em; }
   .feedback.right .verdict { color: var(--ok); animation: stamp .3s cubic-bezier(.2,.9,.3,1.3) both; }
   .feedback.wrong .verdict { color: var(--no); animation: stamp .3s cubic-bezier(.2,.9,.3,1.3) both; }
   .ans-kana { font-size: 24px; font-weight: 500; font-family: var(--f-ja); letter-spacing: .06em; }
@@ -324,7 +331,7 @@
 
   /* ── 움직임 ── */
   @keyframes sheet-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
-  @keyframes stamp    { from { opacity: 0; transform: scale(1.35) rotate(-4deg); } to { opacity: 1; transform: scale(1) rotate(-1.5deg); } }
+  @keyframes stamp    { from { opacity: 0; transform: scale(1.3) rotate(-3deg); } to { opacity: 1; transform: scale(1) rotate(0); } }
   @keyframes caret    { to { visibility: hidden; } }
   @media (prefers-reduced-motion: reduce) {
     .card, .qmeaning.show, .feedback .verdict, .kana-view::after { animation: none !important; }
@@ -344,6 +351,7 @@
     .kana-view { min-height: 52px; font-size: 30px; margin: 14px 0 6px; }
     .feedback { min-height: 40px; margin-top: 10px; }
     .stat-cell b { font-size: 17px; }
+    .lv-num { width: 112px; font-size: 10px; }
     .qmeta { font-size: 10.5px; letter-spacing: 0; }
     .qmeta .box-tag { display: none; }
   }
@@ -670,9 +678,9 @@ function renderFree() {
   const st = S.settings;
   const deckLabel = st.deck === 'word' ? '단어' : '한자';
   const modes = st.deck === 'word'
-    ? [['mix','섞어서','실력에 맞춰 자동'], ['kanji2kana','단어 → 읽기','타이핑'],
+    ? [['mix','랜덤','회독 + 타이핑'], ['kanji2kana','단어 → 읽기','타이핑'],
        ['kana2ko','히라가나 → 뜻','고르기']]
-    : [['mix','섞어서','자동'], ['kanji2ko','한자 → 뜻','고르기'], ['ko2kanji','뜻 → 한자','고르기']];
+    : [['mix','랜덤','두 방식 랜덤'], ['kanji2ko','한자 → 뜻','고르기'], ['ko2kanji','뜻 → 한자','고르기']];
   if (!modes.some(m => m[0] === st.mode)) st.mode = 'mix';
 
   const totalDue = LEVELS.reduce((n, lv) => n + statsOf(lv, st.deck).due, 0);
@@ -698,7 +706,7 @@ function renderFree() {
             <i class="learned" style="width:${pl}%"></i><i class="learning" style="width:${pg}%"></i>
           </div>
           <div class="lv-num">
-            익힘 ${s.learned} · 학습중 ${s.learning} · 새것 ${s.fresh}
+            익힘 ${s.learned} · 학습중 ${s.learning}<br>새 ${st.deck === 'word' ? '단어' : '한자'} ${s.fresh}
             ${s.due ? `<br><b>복습 ${s.due}개 대기</b>` : ''}
           </div>
         </div>`;
@@ -1088,7 +1096,7 @@ function renderOnboarding(step) {
     ];
     screen.innerHTML = `
       <div class="card">
-        <h2>일본어, 왜 공부하세요? <span class="box-tag">가장 가까운 하나만</span></h2>
+        <h2>일본어, 왜 공부하세요?</h2>
         ${opts.map(([k, l]) =>
           `<div class="row" style="margin-top:8px"><button class="ghost" style="text-align:left" data-purpose="${k}">${l}</button></div>`).join('')}
         <p class="note" style="margin-top:12px;text-align:center">
@@ -1117,7 +1125,7 @@ function renderOnboarding(step) {
       <div class="card">
         <h2>JLPT 시험일이 있나요? <span class="box-tag">선택</span></h2>
         <p class="note">등록하면 홈에 D-day가 표시돼요. 일일 목표는 <b>10문항</b>으로 시작합니다 (설정에서 변경 가능).</p>
-        <input type="date" id="obDate" class="chip-input" style="width:100%;border-radius:10px;text-align:center">
+        <input type="date" id="obDate" class="chip-input" style="width:100%;text-align:center">
         <div class="row">
           <button id="ob3">시작하기 →</button>
           <button class="ghost narrow" id="obSkip">건너뛰기</button>
@@ -1256,7 +1264,7 @@ function pickKind(deck, box) {
   } else m = S.settings.mode;
   if (m !== 'mix') return m;
   if (deck === 'word')
-    return box < 1 ? 'kana2ko'       // 자유 학습 '섞어서': 첫 만남만 고르기, 이후 타이핑
+    return box < 1 ? 'kana2ko'       // 자유 학습 '랜덤': 첫 만남만 고르기, 이후 타이핑
          : 'kanji2kana';
   return Math.random() < 0.5 ? 'kanji2ko' : 'ko2kanji';
 }
@@ -1311,7 +1319,7 @@ function renderQuiz() {
     <div class="card">
       <div class="qbar"><i style="width:${done / sessionLen * 100}%"></i></div>
       <div class="qmeta">
-        <span>${({ mistake: '📕 오답 · ' + cur.lv, today: '오늘의 학습', onboard: '첫 학습' })[sessionMode] || sessionLevel} · ${sessionDeck === 'word' ? '단어' : '한자'} · ${sessionMode === 'onboard' ? (done + 1) + '/' + sessionLen : '끝낸 ' + done + '/' + sessionLen}</span>
+        <span>${({ mistake: '📕 오답 · ' + cur.lv, today: '오늘의 학습', onboard: '첫 학습' })[sessionMode] || sessionLevel} · ${sessionDeck === 'word' ? '단어' : '한자'} · ${sessionMode === 'onboard' ? (done + 1) + '/' + sessionLen : '학습완료 ' + done + '/' + sessionLen}</span>
         <span>⭕ ${right} &nbsp; ❌ ${wrong} &nbsp;<span class="box-tag">상자 ${cur.box}/${MAXBOX}</span>
           <button class="speak" id="speakToggle" title="발음 자동 재생 켜기/끄기">${S.settings.speak ? '🔊' : '🔇'}</button></span>
       </div>
@@ -1410,7 +1418,7 @@ function grade(raw, gaveUp, btn) {
   }
   const detail = sessionDeck === 'word'
     ? ''
-    : `음독 ${esc(it.on)} · 훈독 ${esc(it.kun)} · 예) ${esc(it.ex)}（${esc(it.exKana)}）`;
+    : `음독 ${esc(it.on)} · 훈독 ${esc(it.kun)}<br>예) ${esc(it.ex)}（${esc(it.exKana)}）`;
   const speakBtn = `<button class="speak" id="speakBtn" ${canSpeak() ? '' : 'disabled title="일본어 음성이 없습니다"'}>🔊</button>`;
 
   if (q.type === 'write') {
@@ -1543,7 +1551,7 @@ function renderMistakes() {
     <div class="card">
       <h2>📕 오답 노트 · ${label} <span class="box-tag">전체 레벨 · 많이 틀린 순</span></h2>
       <p class="note">
-        한 번이라도 틀렸고 아직 못 익힌 항목이 자동으로 모여요.
+        한 번이라도 틀렸고 아직 못 익힌 항목이 자동으로 모여요.<br>
         복습해서 <b>상자 4</b>까지 올라가면 저절로 졸업합니다. 지울 필요 없어요.
       </p>
       ${mistakes.length ? `
