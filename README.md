@@ -16,9 +16,11 @@
 
 ## 데이터 출처 (Credits)
 
-- 단어 목록: [open-anki-jlpt-decks](https://github.com/jamsinclair/open-anki-jlpt-decks) (MIT License)
+- 단어 목록: [Jonathan Waller, JLPT Resources](https://www.tanos.co.uk/jlpt/) (Creative Commons BY), 정리본 [open-anki-jlpt-decks](https://github.com/jamsinclair/open-anki-jlpt-decks) (MIT License)
 - 한자 데이터: [kanji-data](https://github.com/davidluzgouveia/kanji-data) — [KANJIDIC2](https://www.edrdg.org/wiki/index.php/KANJIDIC_Project) 기반 (EDRDG License, CC BY-SA 4.0)
 - 한국어 뜻·훈음: 자체 번역 (오류 제보 환영)
+- 앱 안 설정 → 출처·라이선스 화면에 같은 내용과 라이선스 링크를 표시합니다. 한자 읽기 데이터는 CC BY-SA 4.0으로 제공됩니다.
+- JLPT(日本語能力試験)는 국제교류기금과 JEES가 주최하는 시험이며, 이 프로젝트는 두 기관과 관계없습니다.
 
 ## 실행
 

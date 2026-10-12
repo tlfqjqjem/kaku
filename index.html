@@ -168,7 +168,7 @@
   .goalbar i { display: block; height: 100%; background: var(--accent); transition: width .3s; }
   .goalbar i.done { background: var(--ok); }
   /* 앱인토스: 토스 내비게이션 바에 뒤로가기가 있으므로 화면 안의 '← 홈' 버튼은 숨긴다(동시 노출 금지) */
-  html.toss #backHomeBtn, html.toss #backBtn, html.toss #backBtn2, html.toss #backBtn3, html.toss #backBtn4 { display: none; }
+  html.toss #backHomeBtn, html.toss #backBtn, html.toss #backBtn2, html.toss #backBtn3, html.toss #backBtn4, html.toss #backBtn5 { display: none; }
   .install-tip {
     position: relative; background: var(--sheet); border: 1px solid var(--line); border-left: 3px solid var(--accent);
     border-radius: var(--r); padding: 14px 42px 14px 16px; margin-top: 14px;
@@ -309,6 +309,14 @@
   }
   textarea:focus { border-color: var(--ink); }
   .note { font-size: 12.5px; color: var(--sub); line-height: 1.75; margin-bottom: 12px; }
+  /* 출처·라이선스 화면 */
+  .credits h3 { font-family: var(--f-serif); font-size: 15px; color: var(--ink); margin: 20px 0 6px; }
+  .credits p, .credits li { font-size: 13px; color: var(--sub); line-height: 1.7; }
+  .credits ul { margin: 0; padding-left: 18px; }
+  .credits a { color: var(--accent); }
+  .credits .url { font-family: var(--f-mono); font-size: 11.5px; color: var(--dim); word-break: break-all; }
+  .credits details { margin-top: 8px; font-size: 12px; color: var(--sub); }
+  .credits details pre { white-space: pre-wrap; font-family: var(--f-mono); font-size: 11px; line-height: 1.55; color: var(--sub); }
   .note code { font-family: var(--f-mono); background: var(--accent-soft); color: var(--accent); padding: 1px 5px; border-radius: 2px; font-size: 12px; }
 
   .foot { text-align: center; font-size: 11.5px; color: var(--dim); margin-top: 20px; line-height: 1.7; }
@@ -1023,6 +1031,11 @@ function renderSettings() {
         <button class="ghost" id="feedbackBtn">💬 의견·오류 제보하기</button>
       </div>` : ''}
 
+      <h2 style="margin-top:20px">정보</h2>
+      <div class="row">
+        <button class="ghost" id="creditsBtn">📜 출처·라이선스</button>
+      </div>
+
       <h2 style="margin-top:20px">데이터</h2>
       <div class="row">
         <button class="ghost" id="exportBtn">📤 기록 내보내기</button>
@@ -1106,6 +1119,77 @@ function renderSettings() {
     }
   };
   document.getElementById('backBtn4').onclick = renderHome;
+  document.getElementById('creditsBtn').onclick = renderCredits;
+  paintFoot('home');
+}
+
+/* ---------- 출처·라이선스 ----------
+   데이터 라이선스가 요구하는 앱 안 출처 표시.
+   EDRDG(KANJIDIC) 라이선스는 앱의 경우 메뉴에서 들어가는 별도 화면에 출처와 라이선스 링크를 두라고 한다.
+   앱인토스는 외부 사이트 이동을 제한하므로 토스 빌드에서는 주소를 링크 대신 텍스트로 보여준다. */
+function renderCredits() {
+  const ref = (url, label) => IN_TOSS
+    ? `${label}<br><span class="url">${url}</span>`
+    : `<a href="${url}" target="_blank" rel="noopener">${label}</a>`;
+  screen.innerHTML = `
+    <div class="card credits">
+      <h2>📜 출처·라이선스</h2>
+      <p>카쿠는 아래 공개 자료를 바탕으로 만들었어요. 자료를 공개해 주신 분들께 감사드립니다.</p>
+
+      <h3>단어 목록</h3>
+      <ul>
+        <li>${ref('https://www.tanos.co.uk/jlpt/', 'Jonathan Waller, JLPT Resources')} · Creative Commons BY 라이선스</li>
+        <li>${ref('https://github.com/jamsinclair/open-anki-jlpt-decks', 'open-anki-jlpt-decks')} (Copyright (c) 2020 Jamie Sinclair) · MIT License</li>
+      </ul>
+      <p>원본의 영어 뜻은 쓰지 않았고, 표기를 정리한 뒤 한국어 뜻을 새로 작성했어요.</p>
+
+      <h3>한자 데이터</h3>
+      <ul>
+        <li>음독·훈독: ${ref('https://www.edrdg.org/wiki/index.php/KANJIDIC_Project', 'KANJIDIC2')}<br>Electronic Dictionary Research and Development Group(EDRDG)의 소유이며, EDRDG 라이선스에 따라 사용했어요.</li>
+        <li>${ref('https://www.edrdg.org/edrdg/licence.html', 'EDRDG 라이선스 전문')}</li>
+        <li>${ref('https://github.com/davidluzgouveia/kanji-data', 'kanji-data')} (Copyright (c) 2019 David Gouveia) · MIT License</li>
+      </ul>
+      <p>카쿠에 담긴 한자 읽기 데이터는 원 라이선스와 같은 Creative Commons BY-SA 4.0 조건으로 제공돼요.</p>
+
+      <h3>한국어 뜻·훈음</h3>
+      <p>카쿠가 직접 작성했어요. 틀린 부분이 있을 수 있어요.</p>
+
+      <h3>글꼴</h3>
+      <p>Shippori Mincho, Noto Serif KR, IBM Plex Sans KR, IBM Plex Mono · SIL Open Font License 1.1</p>
+
+      <h3>JLPT 관련 안내</h3>
+      <p>JLPT(日本語能力試験)는 국제교류기금과 일본국제교육지원협회(JEES)가 주최하는 시험이에요. 카쿠는 두 기관과 관계없는 개인 학습 서비스이며, 기출 문제를 담고 있지 않아요.</p>
+
+      <h3>수집하는 정보</h3>
+      <p>가입이 없고, 학습 기록은 이 기기에만 저장돼요. 서비스 개선을 위해 익명 사용 통계(들어온 화면, 학습 목적·목표 레벨·시험일 등록 여부, 기기마다 무작위로 만든 익명 번호)를 통계 도구 GoatCounter로 보내요. 이름이나 연락처 같은 개인정보는 받지 않아요. 통계 도구와 글꼴 서버에 연결할 때 기기의 IP 주소가 전달되지만, 카쿠는 이를 따로 보관하지 않아요.</p>
+
+      <details>
+        <summary>MIT License 전문</summary>
+        <pre>Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.</pre>
+      </details>
+
+      <div class="row" style="margin-top:18px">
+        <button class="ghost" id="backBtn5">← 설정</button>
+      </div>
+    </div>`;
+  document.getElementById('backBtn5').onclick = renderSettings;
+  track('credits_open');
   paintFoot('home');
 }
 
@@ -1756,7 +1840,7 @@ if (!IN_TOSS && 'serviceWorker' in navigator && location.protocol.startsWith('ht
 if (IN_TOSS) {
   let inSub = false, skipPop = false;
   const home = renderHome;
-  for (const name of ['renderFree', 'renderStats', 'renderSettings', 'renderMistakes', 'renderImport', 'renderQuiz', 'renderDone']) {
+  for (const name of ['renderFree', 'renderStats', 'renderSettings', 'renderMistakes', 'renderImport', 'renderQuiz', 'renderDone', 'renderCredits']) {
     const orig = window[name];
     window[name] = function (...a) {
       if (!inSub) { history.pushState({ kaku: 'sub' }, ''); inSub = true; }
