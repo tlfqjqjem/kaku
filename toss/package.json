@@ -1,0 +1,14 @@
+{
+  "name": "kaku-toss",
+  "private": true,
+  "version": "1.0.0",
+  "description": "kaku(かく) 앱인토스 미니앱 포장. 웹 버전(../index.html)을 그대로 복사해 토스 모드 플래그만 얹는다.",
+  "scripts": {
+    "bundle": "node build.mjs",
+    "build": "node build.mjs && ait build",
+    "deploy": "ait deploy"
+  },
+  "devDependencies": {
+    "@apps-in-toss/web-framework": "^3.8.0"
+  }
+}

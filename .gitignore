@@ -4,3 +4,8 @@ trans/
 
 # 개인용 지표 대시보드 (공개 저장소 제외)
 analytics/
+
+# 앱인토스 포장 (설치물·빌드 결과물)
+toss/node_modules/
+toss/dist/
+toss/*.ait

@@ -167,6 +167,8 @@
   .goalbar { height: 5px; background: var(--line); border-radius: 0; overflow: hidden; margin: 14px 0 10px; }
   .goalbar i { display: block; height: 100%; background: var(--accent); transition: width .3s; }
   .goalbar i.done { background: var(--ok); }
+  /* 앱인토스: 토스 내비게이션 바에 뒤로가기가 있으므로 화면 안의 '← 홈' 버튼은 숨긴다(동시 노출 금지) */
+  html.toss #backHomeBtn, html.toss #backBtn, html.toss #backBtn2, html.toss #backBtn3, html.toss #backBtn4 { display: none; }
   .install-tip {
     position: relative; background: var(--sheet); border: 1px solid var(--line); border-left: 3px solid var(--accent);
     border-radius: var(--r); padding: 14px 42px 14px 16px; margin-top: 14px;
@@ -374,6 +376,10 @@
 /* 하단 안내문의 현재 모드. 발음 초기화가 화면 코드보다 먼저 돌기 때문에
    TDZ(선언 전 접근) 에러를 피하려고 var로 맨 위에 둡니다. */
 var footMode = 'home';
+/* 앱인토스(토스 미니앱) 빌드인지. toss/build.mjs가 번들의 index.html에만 window.KAKU_TOSS = true를 심는다.
+   웹 버전(kaku-jlpt.pages.dev)에서는 항상 false라 아래 분기는 모두 기존 동작 그대로다. */
+var IN_TOSS = window.KAKU_TOSS === true;
+if (IN_TOSS) document.documentElement.classList.add('toss');
 
 /* ============================================================
    1. 로마자 → 히라가나 변환기
@@ -590,8 +596,9 @@ function streakNow() {
    이벤트는 경로로 기록: /이벤트명/세그먼트(목적-레벨-시험일유무)
    → GoatCounter 대시보드에서 경로별로 "취업×N2×시험일있음" 같은 분석 가능 */
 const ANALYTICS = 'https://kaku.goatcounter.com/count';
-/* 피드백 폼(구글폼 등) 주소 — 비어 있으면 설정 화면에 버튼이 표시되지 않음 */
-const FEEDBACK_URL = 'https://forms.gle/jidwCiLMXNxNUiLR7';
+/* 피드백 폼(구글폼 등) 주소 — 비어 있으면 설정 화면에 버튼이 표시되지 않음
+   앱인토스는 외부 사이트 이동을 제한하므로 토스 빌드에서는 비운다 */
+const FEEDBACK_URL = IN_TOSS ? '' : 'https://forms.gle/jidwCiLMXNxNUiLR7';
 function track(event, withChannel) {
   try {
     if (!ANALYTICS) return;
@@ -833,6 +840,7 @@ window.addEventListener('beforeinstallprompt', e => {
 const isIOSDevice = () => /iphone|ipad|ipod/i.test(navigator.userAgent)
   || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 function installKind() {
+  if (IN_TOSS) return null;                     // 앱인토스: 다른 앱 설치 유도 금지 정책
   if (isPWA || S.installHidden) return null;   // 이미 앱으로 쓰는 중이거나 닫음
   if (deferredPrompt) return 'button';         // 크롬 계열: 설치 버튼
   if (isIOSDevice()) return 'ios';             // 사파리: 수동 안내
@@ -1702,11 +1710,11 @@ function paintFoot(mode) {
   f.innerHTML = ({
     write : `로마자로 치면 히라가나로 바뀝니다. <kbd>Enter</kbd> 로 확인 / 다음<br>예) mizu → みず · gakkou → がっこう · shashin → しゃしん${voice}`,
     choose: `보기를 눌러서 답하세요. <kbd>Enter</kbd> 로 다음 문제${voice}`,
-    import: `추가한 단어는 이 브라우저에만 저장됩니다.`,
+    import: `추가한 단어는 ${IN_TOSS ? '이 기기' : '이 브라우저'}에만 저장됩니다.`,
     mistake: `오답 노트는 현재 선택된 덱(단어/한자) 기준이에요. 자유 학습에서 덱을 바꾸면 그 덱의 오답이 보입니다.`,
     free  : `자유 학습은 레벨·덱·방식을 직접 골라서 공부하는 곳이에요. 여기서 푼 문항도 오늘 목표에 들어갑니다.`,
-    onboard: `가입 없음 · 기록은 이 기기의 브라우저에 저장됩니다.<br>📱 <b>아이폰은 Safari</b>, <b>안드로이드는 Chrome</b>으로 열어 주세요 — 카톡·인스타 안에서 열면 기록이 따로 저장되고 홈 화면 추가도 안 돼요.`,
-    home  : `학습 기록은 이 브라우저에 자동 저장됩니다 — 창을 닫았다 열어도 이어서 진행돼요.${voice}`
+    onboard: IN_TOSS ? `가입 없음 · 학습 기록은 이 기기에 저장됩니다.` : `가입 없음 · 기록은 이 기기의 브라우저에 저장됩니다.<br>📱 <b>아이폰은 Safari</b>, <b>안드로이드는 Chrome</b>으로 열어 주세요 — 카톡·인스타 안에서 열면 기록이 따로 저장되고 홈 화면 추가도 안 돼요.`,
+    home  : `학습 기록은 ${IN_TOSS ? '이 기기' : '이 브라우저'}에 자동 저장됩니다 — 창을 닫았다 열어도 이어서 진행돼요.${voice}`
   })[footMode] || '';
 }
 
@@ -1717,12 +1725,12 @@ if (!S.anonId) { S.anonId = Math.random().toString(36).slice(2, 10); save(); }
 if (!S.channel) {
   const q = new URLSearchParams(location.search);
   const raw = (q.get('from') || q.get('utm_source') || '').toLowerCase();
-  const ch = raw.replace(/[^a-z0-9-]/g, '').slice(0, 16);
+  const ch = raw.replace(/[^a-z0-9-]/g, '').slice(0, 16) || (IN_TOSS ? 'toss' : '');   // 토스 유입은 채널 'toss'
   if (ch) { S.channel = ch; save(); }
 }
 // 실행 환경 구분: PWA(홈 화면 설치) vs 일반 브라우저 → 설치율 측정
 const isPWA = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
-track(isPWA ? 'visit_pwa' : 'visit_browser');
+track(IN_TOSS ? 'visit_toss' : isPWA ? 'visit_pwa' : 'visit_browser');
 // 일일 방문(DAU): 기기당 하루에 딱 한 번만 전송 → "중복 없는 그날의 방문 기기 수"
 if (S.lastDailyVisit !== dstr()) { S.lastDailyVisit = dstr(); save(); track('visit_daily', true); }
 // 리텐션(D1/D7/D30): 서버 없이 각 기기가 스스로 "첫 사용 후 며칠째"를 계산해서
@@ -1738,8 +1746,34 @@ for (const n of [1, 7, 30]) {
 // 실사용 중 JS 오류 감지 (로드당 1회만 — 스팸 방지)
 let errTracked = false;
 window.addEventListener('error', () => { if (!errTracked) { errTracked = true; track('error_js'); } });
-if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+if (!IN_TOSS && 'serviceWorker' in navigator && location.protocol.startsWith('http')) {   // 토스는 번들을 직접 관리하므로 캐시 레이어를 두지 않음
   navigator.serviceWorker.register('./sw.js').catch(() => {});   // PWA (배포 환경에서만)
+}
+/* 앱인토스 뒤로 가기: 토스 내비게이션 바의 뒤로가기(안드로이드 시스템 백 포함)가
+   하위 화면에서는 홈으로, 홈에서는 미니앱 종료로 동작하게 한다(비게임 출시 체크리스트).
+   하위 화면에 처음 들어갈 때 히스토리를 한 칸 쌓고, 뒤로가기(popstate)가 오면 홈을 그린다.
+   앱 안의 홈 버튼으로 돌아온 경우에는 쌓아둔 칸을 직접 지워 히스토리가 늘어나지 않게 한다. */
+if (IN_TOSS) {
+  let inSub = false, skipPop = false;
+  const home = renderHome;
+  for (const name of ['renderFree', 'renderStats', 'renderSettings', 'renderMistakes', 'renderImport', 'renderQuiz', 'renderDone']) {
+    const orig = window[name];
+    window[name] = function (...a) {
+      if (!inSub) { history.pushState({ kaku: 'sub' }, ''); inSub = true; }
+      return orig.apply(this, a);
+    };
+  }
+  window.renderHome = function (...a) {
+    if (inSub) { inSub = false; skipPop = true; history.back(); }
+    return home.apply(this, a);
+  };
+  window.addEventListener('popstate', () => {
+    if (skipPop) { skipPop = false; return; }
+    if (!inSub) return;
+    inSub = false;
+    const quitBtn = document.getElementById('homeBtn');   // 문제 풀이 중이면 기존 '그만하기'와 같은 경로(이탈 계측 포함)
+    if (quitBtn && quitBtn.onclick) quitBtn.onclick(); else home();
+  });
 }
 S.onboarded ? renderHome() : renderOnboarding();
 </script>
