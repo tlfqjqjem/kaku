@@ -461,6 +461,9 @@ const DEFAULTS = {
   anonId: null,           // 익명 인스턴스 ID (개인정보 아님, 리텐션 측정용)
   firstDay: null,         // 첫 사용일 (YYYY-MM-DD) — D1/D7/D30 리텐션 계산 기준
   ret: {},                // 이미 보낸 리텐션 이벤트 표시 (d1/d7/d30, 중복 전송 방지)
+  actDay: null,           // 활성화일: 문제를 처음 채점받은 날. 이 기능 도입 전부터 쓰던 기기는 'legacy'
+  actRet: {},             // 이미 보낸 활성화 기준 리텐션 이벤트 표시 (d1/d7/d30)
+  actChecked: false,      // 도입 전 사용자 판별을 한 번 했는지
   lastDailyVisit: null,   // visit_daily(DAU)를 마지막으로 보낸 날 — 하루 1회만 전송
   channel: null,          // 유입 채널 (?from=... 첫 방문 값만 보관, 이후 덮어쓰지 않음)
   installHidden: false,   // 홈 화면 추가 안내를 사용자가 닫았는지
@@ -475,6 +478,7 @@ function load() {
     const s = { ...DEFAULTS, ...raw,
       settings: { ...DEFAULTS.settings, ...raw.settings },
       ret: (raw.ret) || {},
+      actRet: (raw.actRet) || {},
       stats: { ...DEFAULTS.stats, ...(raw.stats || {}),
                daily: (raw.stats && raw.stats.daily) || {},
                settledIds: (raw.stats && raw.stats.settledIds) || {} } };
@@ -1540,6 +1544,9 @@ function grade(raw, gaveUp, btn) {
   const correct = !gaveUp && given === q.answer;
 
   checked = true;
+  /* 활성화: 어느 화면에서든 문제를 처음 채점받은 순간. 학습 경험을 한 번이라도 해본 사람이
+     리텐션의 분모가 된다(activated). 분자는 같은 기기가 활성화 후 1·7·30일째 다시 온 경우(act_return_d*) */
+  if (!S.actDay) { S.actDay = dstr(); save(); track('activated', true); }
   // 온보딩 첫 세션은 맛보기 — SRS·일일 집계·오답 노트에 아무 기록도 남기지 않음
   if (sessionMode !== 'onboard') recordAnswer(correct, applyResult(cur.id, correct));
   else track('onboard_q' + (sessionLen - queue.length) + (correct ? '_ok' : '_no'));   // 문항별 정답/오답
@@ -1826,6 +1833,19 @@ if (!S.firstDay) {
 const sinceDays = Math.round((new Date(dstr() + 'T00:00:00') - new Date(S.firstDay + 'T00:00:00')) / DAY);
 for (const n of [1, 7, 30]) {
   if (sinceDays === n && !S.ret['d' + n]) { S.ret['d' + n] = 1; save(); track('return_d' + n, true); }
+}
+// 활성화 기준 리텐션: 분모(activated)와 분자(act_return_d*)가 같은 사람이 되도록,
+// 이 기능 도입(2026-10-12) 전부터 쓰던 기기는 'legacy'로 표시해 양쪽 모두에서 뺀다
+if (!S.actChecked) {
+  S.actChecked = true;
+  if (!S.actDay && (S.onboarded || Object.keys(S.progress).length || Object.keys(S.stats.daily).length)) S.actDay = 'legacy';
+  save();
+}
+if (S.actDay && S.actDay !== 'legacy') {
+  const actDays = Math.round((new Date(dstr() + 'T00:00:00') - new Date(S.actDay + 'T00:00:00')) / DAY);
+  for (const n of [1, 7, 30]) {
+    if (actDays === n && !S.actRet['d' + n]) { S.actRet['d' + n] = 1; save(); track('act_return_d' + n, true); }
+  }
 }
 // 실사용 중 JS 오류 감지 (로드당 1회만 — 스팸 방지)
 let errTracked = false;

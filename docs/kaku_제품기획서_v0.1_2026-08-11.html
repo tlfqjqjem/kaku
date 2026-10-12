@@ -164,7 +164,7 @@
   <div class="north"><b>⭐ North Star — 주간 정착 단어 수</b>
     <small>한 주에 상자4(익힘)에 도달한 단어 수. "공부한 척"이 아니라 "실제로 외워진 양"을 측정</small></div>
   <div><b>D7 리텐션</b>
-    <small>첫 방문 후 7일 안에 다시 온 사용자 비율. 습관 루프 검증의 핵심</small></div>
+    <small>문제를 처음 채점받은(활성화) 사람 중 정확히 7일째 다시 온 비율. 학습 경험이 사람을 다시 부르는지 보는 습관 루프 검증의 핵심. 아직 7일이 지나지 않은 사람은 분모에서 뺀다 (2026-10-12 정의 변경, 이전 정의: 첫 방문 기준)</small></div>
   <div><b>세션 완료율</b>
     <small>시작한 세션을 끝까지 마친 비율. 세션 길이·난이도 설계 검증</small></div>
   <div><b>오답 노트 졸업률</b>
@@ -181,6 +181,8 @@
 <table>
   <tr><th>이벤트</th><th>발생 시점</th><th>답하는 질문</th></tr>
   <tr><td>visit_pwa / visit_browser</td><td>앱 실행 (실행 환경 구분)</td><td>사용량(접속 <b>횟수</b>), <b>PWA 설치율</b></td></tr>
+  <tr><td>activated</td><td>어느 화면에서든 문제를 처음 채점받음 (기기당 1회)</td><td>활성화 수. 리텐션의 분모</td></tr>
+  <tr><td>act_return_d1 / d7 / d30</td><td>활성화 후 정확히 1·7·30일째 재방문 (기기당 1회)</td><td>활성화 기준 리텐션의 분자. 기존 <code>return_d*</code>(첫 방문 기준)는 참고용으로 유지</td></tr>
   <tr><td>credits_open</td><td>출처·라이선스 화면 열람</td><td>고지 화면 도달 확인용 (기능 지표 아님)</td></tr>
   <tr><td>visit_toss</td><td>앱 실행 (앱인토스 미니앱 안에서)</td><td>토스 채널 사용량. 토스 유입은 유입 채널 값이 <code>toss</code>로 기록되어 웹 유입과 분리해 읽는다</td></tr>
   <tr><td>visit_daily <span class="accent">(08-14 추가)</span></td><td>앱 실행 — 기기당 하루 1회만</td><td><b>중복 없는 일일 방문 기기 수(DAU 근사)</b> · 방문÷DAU = 1기기당 실행 횟수</td></tr>
